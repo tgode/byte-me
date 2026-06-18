@@ -1,9 +1,9 @@
-import { Component, OnInit, signal, effect } from '@angular/core';
+import { Component, OnInit, signal, effect, inject, DestroyRef } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 export type Theme = 'light' | 'dark';
 
-// Global theme signal — components can inject AppComponent or use a service
+// Global theme signal — any component can import and use this directly
 export const appTheme = signal<Theme>('light');
 
 @Component({
@@ -19,20 +19,19 @@ export const appTheme = signal<Theme>('light');
     }
   `]
 })
-export class AppComponent implements OnInit {
-
-  ngOnInit(): void {
-    // Load persisted theme
+export class AppComponent {
+  constructor() {
+    // Load persisted or OS-preferred theme BEFORE first render
     const stored = localStorage.getItem('bytehr-theme') as Theme | null;
     if (stored === 'dark' || stored === 'light') {
       appTheme.set(stored);
     } else {
-      // Respect OS preference on first load
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      appTheme.set(prefersDark ? 'dark' : 'light');
+      appTheme.set(
+        window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      );
     }
 
-    // Apply theme to <html> element whenever signal changes
+    // effect() MUST be inside constructor (injection context) to work
     effect(() => {
       const t = appTheme();
       document.documentElement.setAttribute('data-theme', t);
