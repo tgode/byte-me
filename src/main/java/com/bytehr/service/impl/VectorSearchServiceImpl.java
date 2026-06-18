@@ -32,8 +32,8 @@ public class VectorSearchServiceImpl implements VectorSearchService {
             "mid-year", "midyear", "review", "appraisal", "evaluation",
             // Serbian — cilj=goal, ocena=evaluation, pregled=review
             "cilj", "ciljeve", "ciljevi", "performanse", "pregled", "procena", "ocena",
-            // Albanian — qëllim=goal, vlerësim=evaluation
-            "qëllim", "qëllime", "performancë", "vlerësim"
+            // Albanian — qëllim=goal, vlerësim=evaluation, objektiv=objective
+            "qëllim", "qëllime", "performancë", "vlerësim", "objektiv"
     );
 
     /** Substrings matched against document filenames to identify EPR-related documents. */
