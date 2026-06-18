@@ -12,7 +12,7 @@ import { DocumentViewerDialogComponent } from '../document-viewer-dialog/documen
 @Component({
   selector: 'app-citation-panel',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatIconModule, MatChipsModule, MatButtonModule, MatDialogModule],
+  imports: [CommonModule, MatCardModule, MatIconModule, MatChipsModule, MatButtonModule, MatDialogModule, DocumentViewerDialogComponent],
   template: `
     @if (citations && citations.length > 0) {
       <div class="citation-panel">
