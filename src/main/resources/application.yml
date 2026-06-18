@@ -45,6 +45,8 @@ ollama:
   timeout-seconds: ${OLLAMA_TIMEOUT:300}
   chat-timeout-seconds: ${OLLAMA_CHAT_TIMEOUT:300}
   embedding-timeout-seconds: ${OLLAMA_EMBEDDING_TIMEOUT:120}
+  # Temperature 0.0 = deterministic output — required for strict RAG mode
+  chat-temperature: ${OLLAMA_CHAT_TEMPERATURE:0.0}
 
 # SharePoint / Microsoft Graph configuration
 sharepoint:
@@ -64,8 +66,12 @@ teams:
 # Vector search configuration
 vector-search:
   top-k: ${VECTOR_SEARCH_TOP_K:5}
-  min-score: ${VECTOR_SEARCH_MIN_SCORE:0.3}
-  confidence-threshold: ${VECTOR_SEARCH_CONFIDENCE_THRESHOLD:0.4}
+  # Lowered from 0.50 to 0.35 to support multilingual retrieval.
+  # nomic-embed-text produces language-specific embeddings; Albanian/Serbian queries
+  # score 0.33-0.40 against English documents. With native-language documents
+  # in the index, Albanian/Serbian queries score 0.68+ against their own language.
+  min-score: ${VECTOR_SEARCH_MIN_SCORE:0.35}
+  confidence-threshold: ${VECTOR_SEARCH_CONFIDENCE_THRESHOLD:0.6}
 
 # Document processing configuration
 document:
@@ -86,6 +92,10 @@ bytehr:
     # Max characters of document context sent to the LLM.
     # Demo default: 1500. Production: 3000-6000.
     max-context-chars: ${BYTEHR_RAG_MAX_CONTEXT_CHARS:1500}
+    # Strict RAG mode: LLM is instructed to answer ONLY from retrieved context.
+    # When true, the model explicitly says it cannot find information if absent.
+    # Default: true (recommended — prevents hallucination of contacts, policies).
+    strict-mode: ${BYTEHR_RAG_STRICT_MODE:true}
 
 logging:
   level:

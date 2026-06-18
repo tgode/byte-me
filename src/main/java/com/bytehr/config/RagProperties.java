@@ -17,8 +17,16 @@ public class RagProperties {
     /**
      * Maximum total characters of document context sent to the LLM.
      * Chunks are included in relevance order; excess characters are truncated.
-     * Smaller contexts reduce prompt token count and LLM generation time.
      * Default: 1500 (demo mode). Production: 3000–6000.
      */
     private int maxContextChars = 1500;
+
+    /**
+     * Enables strict RAG mode: the LLM is explicitly instructed to answer
+     * only from the retrieved context and to say "I could not find this
+     * information in the HR documents." when information is absent.
+     * Also switches the temperature to 0.0 for deterministic output.
+     * Default: true.
+     */
+    private boolean strictMode = true;
 }
