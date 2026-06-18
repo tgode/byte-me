@@ -71,6 +71,10 @@ bytehr:
 logging:
   level:
     com.bytehr: INFO
+    com.bytehr.service.impl.DocumentProcessorServiceImpl: DEBUG
+    com.bytehr.service.impl.EmbeddingServiceImpl: DEBUG
+    com.bytehr.service.impl.VectorSearchServiceImpl: DEBUG
+    com.bytehr.integration.ollama.OllamaClient: DEBUG
     org.hibernate.SQL: WARN
 
 management:

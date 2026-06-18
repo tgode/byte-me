@@ -51,38 +51,79 @@ public class DocumentProcessorServiceImpl implements DocumentProcessorService {
         // Step 2: Detect language
         String language = languageDetectionService.detectLanguage(text);
         document.setLanguage(language);
+        log.debug("[Processor] Detected language='{}' for document '{}'", language, document.getName());
 
         // Step 3: Remove old chunks for this document
         chunkRepository.deleteByDocumentId(document.getId());
 
         // Step 4: Chunk content
         List<String> chunkTexts = chunkingService.chunk(text, chunkSize, chunkOverlap);
-        log.info("Document '{}' split into {} chunks", document.getName(), chunkTexts.size());
+        log.info("Document '{}' split into {} chunks (chunkSize={}, overlap={})",
+                document.getName(), chunkTexts.size(), chunkSize, chunkOverlap);
+
+        int embeddingSuccesses = 0;
+        int embeddingFailures = 0;
 
         // Step 5: Generate embeddings and store chunks
         for (int i = 0; i < chunkTexts.size(); i++) {
             String chunkContent = chunkTexts.get(i);
 
+            // FIX: Use saveAndFlush() to immediately execute the INSERT via JPA before
+            // the JDBC UPDATE that writes the embedding vector.
+            //
+            // Root cause of NULL embeddings:
+            // save() only queues the INSERT in JPA's first-level cache — it is NOT sent
+            // to the database until the transaction flushes (at commit). The subsequent
+            // jdbcTemplate.update() runs via raw JDBC, finds no row with the chunk's UUID,
+            // and silently updates 0 rows. saveAndFlush() forces the INSERT to the database
+            // within the current transaction so the JDBC UPDATE finds the row.
             DocumentChunk chunk = DocumentChunk.builder()
                     .document(document)
                     .content(chunkContent)
                     .chunkIndex(i)
                     .build();
-            chunkRepository.save(chunk);
+            chunk = chunkRepository.saveAndFlush(chunk);
 
-            // Generate and store embedding via JDBC (pgvector native type)
-            float[] embedding = embeddingService.generateEmbedding(chunkContent);
-            String vectorLiteral = toVectorLiteral(embedding);
-            jdbcTemplate.update(
-                    "UPDATE document_chunks SET embedding = ?::vector WHERE id = ?",
-                    vectorLiteral, chunk.getId());
+            log.debug("[Embedding] Requesting embedding for chunk {}/{} of '{}': chunkId={}, textLen={}",
+                    i + 1, chunkTexts.size(), document.getName(), chunk.getId(), chunkContent.length());
+
+            try {
+                float[] embedding = embeddingService.generateEmbedding(chunkContent);
+
+                log.debug("[Embedding] Received embedding for chunk {}/{}: dimension={}",
+                        i + 1, chunkTexts.size(), embedding.length);
+
+                String vectorLiteral = toVectorLiteral(embedding);
+                int rows = jdbcTemplate.update(
+                        "UPDATE document_chunks SET embedding = ?::vector WHERE id = ?",
+                        vectorLiteral, chunk.getId());
+
+                if (rows == 1) {
+                    log.debug("[Embedding] Persisted embedding for chunk id={}: rowsUpdated={}",
+                            chunk.getId(), rows);
+                    embeddingSuccesses++;
+                } else {
+                    log.error("[Embedding] FAILED to persist embedding for chunk id={}: rowsUpdated={}. " +
+                              "Expected 1 but got {}. The chunk INSERT may not have reached the DB.",
+                              chunk.getId(), rows, rows);
+                    embeddingFailures++;
+                }
+            } catch (Exception e) {
+                log.error("[Embedding] Exception generating/persisting embedding for chunk {}/{} of '{}': {}",
+                        i + 1, chunkTexts.size(), document.getName(), e.getMessage(), e);
+                embeddingFailures++;
+            }
         }
+
+        log.info("[Embedding] Document '{}': {}/{} embeddings persisted successfully ({} failed)",
+                document.getName(), embeddingSuccesses, chunkTexts.size(), embeddingFailures);
 
         // Step 6: Update document sync timestamp
         document.setLastSync(Instant.now());
         documentRepository.save(document);
 
-        log.info("Finished processing document '{}': {} chunks stored", document.getName(), chunkTexts.size());
+        log.info("Finished processing document '{}': {} chunks stored, {} embeddings persisted",
+                document.getName(), chunkTexts.size(), embeddingSuccesses);
     }
 
     private String extractText(byte[] fileContent, String filename) {

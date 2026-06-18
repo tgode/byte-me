@@ -35,7 +35,7 @@ public class OllamaClient {
      * Generates an embedding vector for the given text using nomic-embed-text.
      */
     public float[] generateEmbedding(String text) {
-        log.debug("Generating embedding for text of length {}", text.length());
+        log.debug("[OllamaClient] Embedding request: model='{}', textLen={}", embeddingModel, text.length());
 
         OllamaEmbeddingRequest request = OllamaEmbeddingRequest.builder()
                 .model(embeddingModel)
@@ -55,6 +55,8 @@ public class OllamaClient {
         }
 
         List<Float> embedding = response.getEmbedding();
+        log.debug("[OllamaClient] Embedding response: model='{}', dimension={}", embeddingModel, embedding.size());
+
         float[] result = new float[embedding.size()];
         for (int i = 0; i < embedding.size(); i++) {
             result[i] = embedding.get(i);
