@@ -3,6 +3,7 @@
   "manifestVersion": "1.17",
   "version": "1.0.0",
   "id": "fd5a8cce-3ab6-4147-b3ff-8c7b123247a1",
+  "packageName": "com.bytehr.teams",
   "developer": {
     "name": "ByteHR Team",
     "websiteUrl": "https://bytehr.example.com",
@@ -10,12 +11,12 @@
     "termsOfUseUrl": "https://bytehr.example.com/terms"
   },
   "name": {
-    "short": "ByteHR AI (Local)",
-    "full": "ByteHR AI - HR Assistant (Local Dev)"
+    "short": "ByteHR Assistant",
+    "full": "ByteHR AI - Intelligent HR Assistant"
   },
   "description": {
-    "short": "AI-powered HR Assistant for employees.",
-    "full": "ByteHR AI local development build. Tab points to http://localhost:4200."
+    "short": "Your AI-powered HR Assistant, available 24/7.",
+    "full": "ByteHR AI is an enterprise-grade HR assistant that delivers instant, accurate answers to employee questions on company policies, benefits, leave entitlements, payroll, and onboarding - powered by advanced AI and your organisation's official HR documentation across Albania, Serbia, and global operations."
   },
   "icons": {
     "color": "color.png",
@@ -26,18 +27,14 @@
     {
       "entityId": "bytehr-chat",
       "name": "HR Assistant",
-      "contentUrl": "https://psd8xfj9-4200.euw.devtunnels.ms/",
-      "websiteUrl": "https://psd8xfj9-4200.euw.devtunnels.ms/",
-      "scopes": [
-        "personal"
-      ]
+      "contentUrl": "https://m6w6ww9l-4200.euw.devtunnels.ms/",
+      "websiteUrl": "https://m6w6ww9l-4200.euw.devtunnels.ms/",
+      "scopes": ["personal"]
     }
   ],
-  "permissions": [
-    "identity",
-    "messageTeamMembers"
-  ],
+  "permissions": ["identity", "messageTeamMembers"],
   "validDomains": [
-    "psd8xfj9-4200.euw.devtunnels.ms"
+    "m6w6ww9l-4200.euw.devtunnels.ms",
+    "m6w6ww9l.euw.devtunnels.ms"
   ]
 }

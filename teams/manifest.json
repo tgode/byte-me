@@ -11,12 +11,12 @@
     "termsOfUseUrl": "https://bytehr.example.com/terms"
   },
   "name": {
-    "short": "ByteHR AI",
-    "full": "ByteHR AI - HR Assistant"
+    "short": "ByteHR Assistant",
+    "full": "ByteHR AI - Intelligent HR Assistant"
   },
   "description": {
-    "short": "AI-powered HR Assistant for employees.",
-    "full": "ByteHR AI answers your HR questions in Albanian, Serbian and English using official company policies stored in SharePoint. Supports country-specific policies for Albania and Serbia. No need to search documents manually - just ask."
+    "short": "Your AI-powered HR Assistant, available 24/7.",
+    "full": "ByteHR AI is an enterprise-grade HR assistant that delivers instant, accurate answers to employee questions on company policies, benefits, leave entitlements, payroll, and onboarding - powered by advanced AI and your organisation's official HR documentation across Albania, Serbia, and global operations."
   },
   "icons": {
     "color": "color.png",
@@ -35,7 +35,7 @@
           "commands": [
             {
               "title": "Help",
-              "description": "Show available commands and how to use ByteHR AI"
+              "description": "Show available commands and how to use ByteHR Assistant"
             },
             {
               "title": "Vacation",
