@@ -25,6 +25,7 @@
         <azure.identity.version>1.15.4</azure.identity.version>
         <pgvector.version>0.1.6</pgvector.version>
         <mockito.version>5.11.0</mockito.version>
+        <springdoc.version>2.8.8</springdoc.version>
     </properties>
 
     <dependencies>
