@@ -26,6 +26,7 @@ public class HrResponseAgentImpl implements HrResponseAgent {
 
     /**
      * Standard system prompt — used when strict-mode=false.
+     * %1$s = document context, %2$s = language specification
      */
     private static final String SYSTEM_PROMPT_STANDARD = """
             You are ByteHR AI, an HR assistant for employees in Albania and Serbia.
@@ -40,14 +41,14 @@ public class HrResponseAgentImpl implements HrResponseAgent {
             7. Country-specific policies from the user's country take priority.
 
             CONTEXT FROM HR DOCUMENTS:
-            %s
+            %1$s
 
-            Respond in the language the user used.
+            Respond ONLY in %2$s. Do not switch languages.
             """;
 
     /**
      * Strict system prompt — used when strict-mode=true (default).
-     * Explicitly forbids any information not present in the retrieved context.
+     * %1$s = document context, %2$s = language specification
      */
     private static final String SYSTEM_PROMPT_STRICT = """
             You are ByteHR AI, an HR assistant for employees in Albania and Serbia.
@@ -62,16 +63,15 @@ public class HrResponseAgentImpl implements HrResponseAgent {
                "I could not find this information in the HR documents."
             6. If the question is not HR-related, respond:
                "This question is outside my HR scope. Can I help you with vacation, leave, benefits, or other HR topics?"
-            7. Always respond in the SAME LANGUAGE as the user's question.
-            8. When you provide an answer, quote or closely paraphrase the relevant text from the context and name the source document.
-            9. Country-specific policies from the user's country take priority over global policies.
-            10. Keep responses concise and factual. Do not add qualifications, suggestions, or advice beyond what the documents state.
+            7. When you provide an answer, quote or closely paraphrase the relevant text from the context and name the source document.
+            8. Country-specific policies from the user's country take priority over global policies.
+            9. Keep responses concise and factual. Do not add qualifications, suggestions, or advice beyond what the documents state.
 
             CONTEXT FROM HR DOCUMENTS:
-            %s
+            %1$s
 
             CRITICAL: Use ONLY the above context. Do not supplement with general knowledge.
-            Respond in the language the user used.
+            Respond ONLY in %2$s. Do not switch languages mid-answer.
             """;
 
     private final VectorSearchService vectorSearchService;
@@ -89,8 +89,10 @@ public class HrResponseAgentImpl implements HrResponseAgent {
                                  String userId, String userName, List<String> conversationHistory) {
         long startTime = System.currentTimeMillis();
         String detectedLanguage = languageDetectionService.detectLanguage(question);
-        log.info("[RAG] Query: user='{}', country='{}', lang='{}', topK={}, maxContextChars={}, strictMode={}",
-                userId, country, detectedLanguage,
+        String languageSpec = buildLanguageSpec(detectedLanguage);
+
+        log.info("[RAG] Query: user='{}', country='{}', detectedLanguage='{}', lang='{}', topK={}, maxContextChars={}, strictMode={}",
+                userId, country, detectedLanguage, languageSpec,
                 ragProperties.getTopK(), ragProperties.getMaxContextChars(), ragProperties.isStrictMode());
 
         // Retrieve relevant chunks using configurable topK
@@ -102,7 +104,7 @@ public class HrResponseAgentImpl implements HrResponseAgent {
         } else {
             log.info("[RAG] Retrieved {} chunk(s):", chunks.size());
             for (RelevantChunk chunk : chunks) {
-                log.info("[RAG]   document='{}' score={} chunkIdx={}",
+                log.info("[RAG]   document='{}' similarityScore={} chunkIdx={}",
                         chunk.getDocumentName(),
                         String.format("%.4f", chunk.getSimilarityScore()),
                         chunk.getChunkIndex());
@@ -124,9 +126,9 @@ public class HrResponseAgentImpl implements HrResponseAgent {
         String context = buildContext(chunks, ragProperties.getMaxContextChars());
         log.info("[RAG] Context size: {} chars", context.length());
 
-        // Select prompt template based on strict mode
+        // Select prompt template and inject context + explicit language
         String promptTemplate = ragProperties.isStrictMode() ? SYSTEM_PROMPT_STRICT : SYSTEM_PROMPT_STANDARD;
-        String systemPrompt = String.format(promptTemplate, context);
+        String systemPrompt = String.format(promptTemplate, context, languageSpec);
 
         // Build message list: system + history + current question
         List<OllamaMessage> messages = new ArrayList<>();
@@ -156,9 +158,9 @@ public class HrResponseAgentImpl implements HrResponseAgent {
         log.info("[RAG] Answer length: {} chars", rawAnswer.length());
 
         long responseTimeMs = System.currentTimeMillis() - startTime;
-        log.info("[RAG] Answered in {}ms: confidence={}, chunks={}, citations={}, strictMode={}",
+        log.info("[RAG] Answered in {}ms: confidence={}, chunks={}, citations={}, lang='{}', strictMode={}",
                 responseTimeMs, String.format("%.3f", maxScore),
-                chunks.size(), citations.size(), ragProperties.isStrictMode());
+                chunks.size(), citations.size(), detectedLanguage, ragProperties.isStrictMode());
 
         // Persist conversation turn
         conversationService.saveConversation(conversationId, userId, userName, country, question, rawAnswer, maxScore);
@@ -173,6 +175,20 @@ public class HrResponseAgentImpl implements HrResponseAgent {
                 .detectedLanguage(detectedLanguage)
                 .answered(true)
                 .build();
+    }
+
+    /**
+     * Maps a BCP-47 language code to a human-readable specification injected into the system prompt.
+     * This ensures the LLM responds in the correct language even when the question is short
+     * (which can confuse language detection).
+     */
+    private String buildLanguageSpec(String langCode) {
+        return switch (langCode.toLowerCase()) {
+            case "sq" -> "Albanian (Shqip)";
+            case "sr" -> "Serbian (Srpski)";
+            case "en" -> "English";
+            default   -> "the same language as the user's question (detected: " + langCode + ")";
+        };
     }
 
     /**

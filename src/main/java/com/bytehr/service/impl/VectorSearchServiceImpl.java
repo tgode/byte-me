@@ -29,7 +29,7 @@ public class VectorSearchServiceImpl implements VectorSearchService {
         log.debug("[VectorSearch] Searching: question='{}', country='{}', topK={}", question, country, topK);
 
         float[] queryEmbedding = embeddingService.generateEmbedding(question);
-        log.debug("[VectorSearch] Query embedding generated: dimension={}", queryEmbedding.length);
+        log.info("[VectorSearch] questionEmbeddingDimension={}", queryEmbedding.length);
         String vectorLiteral = toVectorLiteral(queryEmbedding);
 
         List<RelevantChunk> results = new ArrayList<>();
@@ -48,9 +48,17 @@ public class VectorSearchServiceImpl implements VectorSearchService {
                 .filter(c -> c.getSimilarityScore() >= minScore)
                 .toList();
 
-        log.debug("[VectorSearch] After minScore={} filter: {} chunks remain (scores: {})",
-                minScore, filtered.size(),
-                filtered.stream().map(c -> String.format("%.3f", c.getSimilarityScore())).toList());
+        if (filtered.isEmpty()) {
+            log.info("[VectorSearch] No chunks passed minScore={} filter (raw={}, filtered=0). " +
+                     "Consider lowering min-score or adding native-language documents.",
+                     minScore, results.size());
+        } else {
+            log.info("[VectorSearch] retrievedDocuments={}: {}",
+                    filtered.size(),
+                    filtered.stream()
+                            .map(c -> c.getDocumentName() + "=" + String.format("%.3f", c.getSimilarityScore()))
+                            .toList());
+        }
 
         return filtered;
     }
