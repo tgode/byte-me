@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 export interface DocumentViewerData {
   documentId: string;
@@ -125,7 +126,7 @@ export class DocumentViewerDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data: DocumentViewerData,
     private http: HttpClient
   ) {
-    this.http.get<DocumentContent>(`/api/documents/${data.documentId}/content`)
+    this.http.get<DocumentContent>(`${environment.apiUrl}/api/documents/${data.documentId}/content`)
       .subscribe({
         next: (d) => { this.doc.set(d); this.loading.set(false); },
         error: () => {

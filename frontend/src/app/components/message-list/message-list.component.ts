@@ -362,7 +362,9 @@ export class MessageListComponent {
   ];
 
   format(content: string): string {
-    return content
+    // Strip any raw HTML tags the AI might include to prevent unintended links/XSS
+    const stripped = content.replace(/<[^>]*>/g, '');
+    return stripped
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/`(.*?)`/g, '<code>$1</code>');
