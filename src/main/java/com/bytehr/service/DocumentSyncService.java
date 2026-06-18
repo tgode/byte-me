@@ -3,8 +3,9 @@ package com.bytehr.service;
 public interface DocumentSyncService {
 
     /**
-     * Synchronizes documents from SharePoint: downloads new or modified documents
-     * and triggers the processing pipeline for each.
+     * Synchronizes documents from the configured source (local or SharePoint).
+     *
+     * @return number of documents processed (new or updated) in this run
      */
-    void synchronize();
+    int synchronize();
 }

@@ -26,26 +26,33 @@ public class VectorSearchServiceImpl implements VectorSearchService {
 
     @Override
     public List<RelevantChunk> search(String question, String country, int topK) {
-        log.debug("Vector search for question='{}', country='{}', topK={}", question, country, topK);
+        log.debug("[VectorSearch] Searching: question='{}', country='{}', topK={}", question, country, topK);
 
         float[] queryEmbedding = embeddingService.generateEmbedding(question);
+        log.debug("[VectorSearch] Query embedding generated: dimension={}", queryEmbedding.length);
         String vectorLiteral = toVectorLiteral(queryEmbedding);
 
         List<RelevantChunk> results = new ArrayList<>();
 
         if (country != null && !country.isBlank()) {
-            // Country-specific search first: documents tagged for this country
             results = executeSearch(vectorLiteral, country, topK);
+            log.debug("[VectorSearch] Country-specific search (country={}): {} chunks returned", country, results.size());
         }
 
-        // If no country-specific results, fall back to all documents
         if (results.isEmpty()) {
             results = executeSearch(vectorLiteral, null, topK);
+            log.debug("[VectorSearch] Global fallback search: {} chunks returned", results.size());
         }
 
-        return results.stream()
+        List<RelevantChunk> filtered = results.stream()
                 .filter(c -> c.getSimilarityScore() >= minScore)
                 .toList();
+
+        log.debug("[VectorSearch] After minScore={} filter: {} chunks remain (scores: {})",
+                minScore, filtered.size(),
+                filtered.stream().map(c -> String.format("%.3f", c.getSimilarityScore())).toList());
+
+        return filtered;
     }
 
     private List<RelevantChunk> executeSearch(String vectorLiteral, String country, int topK) {

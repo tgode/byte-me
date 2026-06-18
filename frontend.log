@@ -1,0 +1,99 @@
+
+Warning: This is a simple server for use in testing or debugging Angular applications
+locally. It hasn't been reviewed for security issues.
+
+Binding this server to an open connection can result in compromising your application or
+computer. Using a different host than the one passed to the "--host" flag might result in
+websocket connection issues. You might need to use "--disable-host-check" if that's the
+case.
+    
+❯ Building...
+✔ Building...
+Initial chunk files | Names         |  Raw size
+main.js             | main          | 138.14 kB | 
+styles.css          | styles        | 122.88 kB | 
+polyfills.js        | polyfills     |  95 bytes | 
+
+                    | Initial total | 261.12 kB
+
+Application bundle generation complete. [2.322 seconds] - 2026-06-18T15:10:33.773Z
+
+Watch mode enabled. Watching for file changes...
+NOTE: Raw file sizes do not reflect development server per-request transformations.
+5:10:33 PM [vite] (client) Re-optimizing dependencies because vite config has changed
+  ➜  Local:   http://localhost:4200/
+  ➜  Network: http://10.255.255.254:4200/
+  ➜  Network: http://172.31.36.92:4200/
+  ➜  Network: http://172.18.0.1:4200/
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Initial chunk files | Names |  Raw size
+main.js             | main  | 138.11 kB | 
+
+Application bundle generation complete. [0.612 seconds] - 2026-06-18T15:14:29.776Z
+
+Page reload sent to client(s).
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [0.065 seconds] - 2026-06-18T15:19:01.684Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles/styles.scss"[0m
+
+    angular:styles/global:styles:2:8:
+[37m      2 │ @import [32m'src/styles/styles.scss'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles/styles.scss" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mCannot find tsconfig file "tsconfig.json"[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS500: Error: ENOENT: no such file or directory, lstat '/home/tgode/env/byte-me/frontend/tsconfig.json'
+    at Object.lstatSync (node:fs:1710:25)
+    at NodeJSFileSystem.lstat (file:///home/tgode/env/byte-me/frontend/node_modules/@angular/compiler-cli/bundles/chunk-KWAGEHJJ.js:73:15)
+    at calcProjectFileAndBasePath (file:///home/tgode/env/byte-me/frontend/node_modules/@angular/compiler-cli/bundles/chunk-ZQDF64UO.js:448:29)
+    at readConfiguration (file:///home/tgode/env/byte-me/frontend/node_modules/@angular/compiler-cli/bundles/chunk-ZQDF64UO.js:474:39)
+    at /home/tgode/env/byte-me/frontend/node_modules/@angular/build/src/tools/angular/compilation/angular-compilation.js:67:69
+    at profileSync (/home/tgode/env/byte-me/frontend/node_modules/@angular/build/src/tools/esbuild/profiling.js:68:16)
+    at AotCompilation.loadConfiguration (/home/tgode/env/byte-me/frontend/node_modules/@angular/build/src/tools/angular/compilation/angular-compilation.js:67:44)
+    at async AotCompilation.initialize (/home/tgode/env/byte-me/frontend/node_modules/@angular/build/src/tools/angular/compilation/aot-compilation.js:62:100)
+    at async initialize (/home/tgode/env/byte-me/frontend/node_modules/@angular/build/src/tools/angular/compilation/parallel-worker.js:38:121)
+    at async onMessage (/home/tgode/env/byte-me/frontend/node_modules/piscina/dist/worker.js:180:22)[0m [1m[35m[plugin angular-compiler][0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "/home/tgode/env/byte-me/frontend/src/main.ts"[0m
+
+
+❯ Changes detected. Rebuilding...
+✔ Changes detected. Rebuilding...
+Application bundle generation failed. [0.000 seconds] - 2026-06-18T15:19:23.734Z
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "src/styles/styles.scss"[0m
+
+    angular:styles/global:styles:2:8:
+[37m      2 │ @import [32m'src/styles/styles.scss'[37m;
+        ╵         [32m~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+  You can mark the path "src/styles/styles.scss" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mCannot find tsconfig file "tsconfig.json"[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mTS500: Error: ENOENT: no such file or directory, lstat '/home/tgode/env/byte-me/frontend/tsconfig.json'
+    at Object.lstatSync (node:fs:1710:25)
+    at NodeJSFileSystem.lstat (file:///home/tgode/env/byte-me/frontend/node_modules/@angular/compiler-cli/bundles/chunk-KWAGEHJJ.js:73:15)
+    at calcProjectFileAndBasePath (file:///home/tgode/env/byte-me/frontend/node_modules/@angular/compiler-cli/bundles/chunk-ZQDF64UO.js:448:29)
+    at readConfiguration (file:///home/tgode/env/byte-me/frontend/node_modules/@angular/compiler-cli/bundles/chunk-ZQDF64UO.js:474:39)
+    at /home/tgode/env/byte-me/frontend/node_modules/@angular/build/src/tools/angular/compilation/angular-compilation.js:67:69
+    at profileSync (/home/tgode/env/byte-me/frontend/node_modules/@angular/build/src/tools/esbuild/profiling.js:68:16)
+    at AotCompilation.loadConfiguration (/home/tgode/env/byte-me/frontend/node_modules/@angular/build/src/tools/angular/compilation/angular-compilation.js:67:44)
+    at async AotCompilation.initialize (/home/tgode/env/byte-me/frontend/node_modules/@angular/build/src/tools/angular/compilation/aot-compilation.js:62:100)
+    at async initialize (/home/tgode/env/byte-me/frontend/node_modules/@angular/build/src/tools/angular/compilation/parallel-worker.js:38:121)
+    at async onMessage (/home/tgode/env/byte-me/frontend/node_modules/piscina/dist/worker.js:180:22)[0m [1m[35m[plugin angular-compiler][0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "/home/tgode/env/byte-me/frontend/src/main.ts"[0m
+
+

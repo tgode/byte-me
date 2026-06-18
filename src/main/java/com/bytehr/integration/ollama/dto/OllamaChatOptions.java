@@ -19,4 +19,12 @@ public class OllamaChatOptions {
     @JsonProperty("num_ctx")
     @Builder.Default
     private int numCtx = 4096;
+
+    /**
+     * Disables extended chain-of-thought (thinking) mode on qwen3 and similar models.
+     * Setting to false significantly reduces latency by suppressing reasoning tokens.
+     */
+    @JsonProperty("think")
+    @Builder.Default
+    private boolean think = false;
 }
