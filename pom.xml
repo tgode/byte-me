@@ -24,6 +24,7 @@
         <microsoft.graph.version>5.77.0</microsoft.graph.version>
         <azure.identity.version>1.12.1</azure.identity.version>
         <pgvector.version>0.1.4</pgvector.version>
+        <springdoc.version>2.5.0</springdoc.version>
     </properties>
 
     <dependencies>
@@ -88,6 +89,13 @@
             <groupId>com.azure</groupId>
             <artifactId>azure-identity</artifactId>
             <version>${azure.identity.version}</version>
+        </dependency>
+
+        <!-- OpenAPI / Swagger UI -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
         </dependency>
 
         <!-- Utilities -->
