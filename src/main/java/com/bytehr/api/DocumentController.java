@@ -1,6 +1,7 @@
 package com.bytehr.api;
 
 import com.bytehr.model.Document;
+import com.bytehr.repository.DocumentChunkRepository;
 import com.bytehr.repository.DocumentRepository;
 import com.bytehr.service.DocumentProcessorService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Admin endpoint for manual document ingestion without SharePoint.
@@ -26,6 +28,7 @@ import java.util.UUID;
 public class DocumentController {
 
     private final DocumentRepository documentRepository;
+    private final DocumentChunkRepository documentChunkRepository;
     private final DocumentProcessorService documentProcessorService;
 
     /**
@@ -108,6 +111,28 @@ public class DocumentController {
                 ))
                 .toList();
         return ResponseEntity.ok(docs);
+    }
+
+    /**
+     * Return the full text content of a document by reassembling its chunks.
+     */
+    @GetMapping("/{id}/content")
+    public ResponseEntity<Map<String, Object>> getDocumentContent(@PathVariable UUID id) {
+        return documentRepository.findById(id)
+                .map(doc -> {
+                    String content = documentChunkRepository
+                            .findByDocumentIdOrderByChunkIndex(id)
+                            .stream()
+                            .map(chunk -> chunk.getContent())
+                            .collect(Collectors.joining("\n\n"));
+                    return ResponseEntity.ok(Map.<String, Object>of(
+                            "id", doc.getId(),
+                            "name", doc.getName(),
+                            "country", doc.getCountry() != null ? doc.getCountry() : "ALL",
+                            "content", content
+                    ));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /**

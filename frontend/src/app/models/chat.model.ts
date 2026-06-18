@@ -7,6 +7,7 @@ export interface ChatRequest {
 }
 
 export interface Citation {
+  documentId?: string;
   documentName: string;
   sourcePath?: string;
   section?: string;

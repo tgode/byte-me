@@ -181,3 +181,11 @@ button { font-family: inherit; }
 
 // Mat icon baseline fix
 .mat-icon { vertical-align: middle; }
+
+// Document viewer dialog - inherit CSS variables
+.doc-viewer-dialog .mat-mdc-dialog-container {
+  background: var(--c-surface);
+  color: var(--c-text);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}

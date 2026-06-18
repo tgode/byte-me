@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -17,4 +18,7 @@ public interface DocumentChunkRepository extends JpaRepository<DocumentChunk, UU
     void deleteByDocumentId(@Param("documentId") UUID documentId);
 
     long countByDocumentId(UUID documentId);
+
+    @Query("SELECT dc FROM DocumentChunk dc WHERE dc.document.id = :documentId ORDER BY dc.chunkIndex ASC")
+    List<DocumentChunk> findByDocumentIdOrderByChunkIndex(@Param("documentId") UUID documentId);
 }

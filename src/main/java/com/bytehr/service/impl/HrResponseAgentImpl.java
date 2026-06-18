@@ -175,6 +175,7 @@ public class HrResponseAgentImpl implements HrResponseAgent {
             String key = chunk.getDocumentId().toString();
             if (seen.add(key)) {
                 citations.add(Citation.builder()
+                        .documentId(chunk.getDocumentId())
                         .documentName(chunk.getDocumentName())
                         .sourcePath(chunk.getSourcePath())
                         .pageNumber(chunk.getPageNumber())

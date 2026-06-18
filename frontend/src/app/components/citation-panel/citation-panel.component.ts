@@ -3,12 +3,16 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
 import { Citation } from '../../models/chat.model';
+import { DocumentViewerDialogComponent } from '../document-viewer-dialog/document-viewer-dialog.component';
 
 @Component({
   selector: 'app-citation-panel',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatIconModule, MatChipsModule],
+  imports: [CommonModule, MatCardModule, MatIconModule, MatChipsModule, MatButtonModule, MatDialogModule],
   template: `
     @if (citations && citations.length > 0) {
       <div class="citation-panel">
@@ -28,12 +32,10 @@ import { Citation } from '../../models/chat.model';
                 @if (citation.section) {
                   <span class="meta">{{ citation.section }}</span>
                 }
-                @if (citation.sourcePath || citation.webUrl) {
-                  <a [href]="citation.webUrl || citation.sourcePath"
-                     target="_blank"
-                     class="view-link">
+                @if (citation.documentId) {
+                  <button class="view-btn" (click)="openDocument(citation)">
                     <mat-icon inline>open_in_new</mat-icon> View
-                  </a>
+                  </button>
                 }
               </div>
             </div>
@@ -87,17 +89,36 @@ import { Citation } from '../../models/chat.model';
       padding: 1px 7px;
       border-radius: var(--radius-full);
     }
-    .view-link {
+    .view-btn {
       display: flex;
       align-items: center;
       gap: 2px;
       color: var(--c-primary);
-      text-decoration: none;
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
       font-size: 11px;
+      font-family: inherit;
+      text-decoration: none;
     }
-    .view-link:hover { text-decoration: underline; }
+    .view-btn:hover { text-decoration: underline; }
+    .view-btn mat-icon { font-size: 12px; width: 12px; height: 12px; }
   `]
 })
 export class CitationPanelComponent {
   @Input() citations: Citation[] = [];
+
+  constructor(private dialog: MatDialog) {}
+
+  openDocument(citation: Citation) {
+    if (!citation.documentId) return;
+    this.dialog.open(DocumentViewerDialogComponent, {
+      data: { documentId: citation.documentId, documentName: citation.documentName },
+      width: '700px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      panelClass: 'doc-viewer-dialog'
+    });
+  }
 }
