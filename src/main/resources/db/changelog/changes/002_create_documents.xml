@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="002-create-documents" author="bytehr">
+        <createTable tableName="documents">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="source_path" type="VARCHAR(2000)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sharepoint_item_id" type="VARCHAR(500)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="language" type="VARCHAR(10)"/>
+            <column name="country" type="VARCHAR(10)"/>
+            <column name="file_type" type="VARCHAR(20)"/>
+            <column name="file_size" type="BIGINT"/>
+            <column name="last_modified" type="TIMESTAMP"/>
+            <column name="last_sync" type="TIMESTAMP"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="documents" indexName="idx_documents_sharepoint_item_id">
+            <column name="sharepoint_item_id"/>
+        </createIndex>
+        <createIndex tableName="documents" indexName="idx_documents_country">
+            <column name="country"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

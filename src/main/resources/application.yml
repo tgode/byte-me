@@ -1,0 +1,75 @@
+spring:
+  application:
+    name: byte-hr
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/bytehr}
+    username: ${DB_USERNAME:bytehr}
+    password: ${DB_PASSWORD:bytehr}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: false
+    open-in-view: false
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: true
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+
+# Ollama configuration
+ollama:
+  base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+  embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+  chat-model: ${OLLAMA_CHAT_MODEL:qwen2.5-coder}
+  timeout-seconds: ${OLLAMA_TIMEOUT:60}
+
+# SharePoint / Microsoft Graph configuration
+sharepoint:
+  tenant-id: ${SHAREPOINT_TENANT_ID:}
+  client-id: ${SHAREPOINT_CLIENT_ID:}
+  client-secret: ${SHAREPOINT_CLIENT_SECRET:}
+  site-id: ${SHAREPOINT_SITE_ID:}
+  drive-id: ${SHAREPOINT_DRIVE_ID:}
+  sync-enabled: ${SHAREPOINT_SYNC_ENABLED:true}
+  sync-interval-ms: ${SHAREPOINT_SYNC_INTERVAL_MS:3600000}
+
+# Microsoft Teams Bot configuration
+teams:
+  app-id: ${TEAMS_APP_ID:}
+  app-password: ${TEAMS_APP_PASSWORD:}
+
+# Vector search configuration
+vector-search:
+  top-k: ${VECTOR_SEARCH_TOP_K:5}
+  min-score: ${VECTOR_SEARCH_MIN_SCORE:0.5}
+  confidence-threshold: ${VECTOR_SEARCH_CONFIDENCE_THRESHOLD:0.6}
+
+# Document processing configuration
+document:
+  chunk-size: ${DOCUMENT_CHUNK_SIZE:1000}
+  chunk-overlap: ${DOCUMENT_CHUNK_OVERLAP:200}
+
+logging:
+  level:
+    com.bytehr: INFO
+    org.hibernate.SQL: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized

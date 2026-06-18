@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <include file="classpath:db/changelog/changes/001_create_extensions.xml"/>
+    <include file="classpath:db/changelog/changes/002_create_documents.xml"/>
+    <include file="classpath:db/changelog/changes/003_create_document_chunks.xml"/>
+    <include file="classpath:db/changelog/changes/004_create_conversations.xml"/>
+    <include file="classpath:db/changelog/changes/005_create_analytics.xml"/>
+
+</databaseChangeLog>

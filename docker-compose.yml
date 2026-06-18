@@ -1,0 +1,114 @@
+version: '3.9'
+
+services:
+  # ─────────────────────────────────────────────────────────────
+  # PostgreSQL 16 with pgvector
+  # ─────────────────────────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: bytehr-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-bytehr}
+      POSTGRES_USER: ${DB_USERNAME:-bytehr}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-bytehr}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-bytehr} -d ${DB_NAME:-bytehr}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────────────────────
+  # Ollama — local AI inference
+  # ─────────────────────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: bytehr-ollama
+    restart: unless-stopped
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # ─────────────────────────────────────────────────────────────
+  # Model initializer — pulls required Ollama models on startup
+  # ─────────────────────────────────────────────────────────────
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: bytehr-ollama-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        OLLAMA_HOST=http://ollama:11434
+        echo "Pulling nomic-embed-text..."
+        ollama pull nomic-embed-text
+        echo "Pulling qwen2.5-coder..."
+        ollama pull qwen2.5-coder
+        echo "Models ready."
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    restart: "no"
+
+  # ─────────────────────────────────────────────────────────────
+  # ByteHR API
+  # ─────────────────────────────────────────────────────────────
+  bytehr-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bytehr-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      # Database
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-bytehr}
+      DB_USERNAME: ${DB_USERNAME:-bytehr}
+      DB_PASSWORD: ${DB_PASSWORD:-bytehr}
+      # Ollama
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text}
+      OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen2.5-coder}
+      OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-60}
+      # SharePoint / Microsoft Graph
+      SHAREPOINT_TENANT_ID: ${SHAREPOINT_TENANT_ID:-}
+      SHAREPOINT_CLIENT_ID: ${SHAREPOINT_CLIENT_ID:-}
+      SHAREPOINT_CLIENT_SECRET: ${SHAREPOINT_CLIENT_SECRET:-}
+      SHAREPOINT_SITE_ID: ${SHAREPOINT_SITE_ID:-}
+      SHAREPOINT_DRIVE_ID: ${SHAREPOINT_DRIVE_ID:-}
+      SHAREPOINT_SYNC_ENABLED: ${SHAREPOINT_SYNC_ENABLED:-false}
+      # Teams Bot
+      TEAMS_APP_ID: ${TEAMS_APP_ID:-}
+      TEAMS_APP_PASSWORD: ${TEAMS_APP_PASSWORD:-}
+      # Server
+      SERVER_PORT: 8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  postgres_data:
+  ollama_data:

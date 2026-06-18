@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="004-create-conversations" author="bytehr">
+        <createTable tableName="conversations">
+            <column name="id" type="UUID" defaultValueComputed="gen_random_uuid()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="teams_conversation_id" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_name" type="VARCHAR(255)"/>
+            <column name="user_country" type="VARCHAR(10)"/>
+            <column name="question" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="response" type="TEXT"/>
+            <column name="confidence_score" type="DECIMAL(5,4)"/>
+            <column name="timestamp" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="conversations" indexName="idx_conversations_teams_id">
+            <column name="teams_conversation_id"/>
+        </createIndex>
+        <createIndex tableName="conversations" indexName="idx_conversations_user_id">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
