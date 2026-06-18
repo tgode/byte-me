@@ -21,10 +21,15 @@
             "outputPath": "dist/bytehr-frontend",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": ["zone.js"],
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "tsconfig.json",
             "assets": [
-              { "glob": "**/*", "input": "public" }
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
             ],
             "styles": [
               "@angular/material/prebuilt-themes/indigo-pink.css",
@@ -35,8 +40,16 @@
           "configurations": {
             "production": {
               "budgets": [
-                { "type": "initial", "maximumWarning": "500kB", "maximumError": "1MB" },
-                { "type": "anyComponentStyle", "maximumWarning": "4kB", "maximumError": "8kB" }
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
               ],
               "outputHashing": "all",
               "fileReplacements": [
@@ -57,12 +70,28 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
-            "production": { "buildTarget": "bytehr-frontend:build:production" },
-            "development": { "buildTarget": "bytehr-frontend:build:development" }
+            "production": {
+              "buildTarget": "bytehr-frontend:build:production"
+            },
+            "development": {
+              "buildTarget": "bytehr-frontend:build:development"
+            }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "development",
+          "options": {
+            "allowedHosts": [
+              "all"
+            ],
+            "headers": {
+              "Content-Security-Policy": "frame-ancestors *",
+              "Access-Control-Allow-Origin": "*"
+            }
+          }
         }
       }
     }
+  },
+  "cli": {
+    "analytics": "94a25799-ad0a-4901-bd8a-2cccf98cf3c2"
   }
 }
