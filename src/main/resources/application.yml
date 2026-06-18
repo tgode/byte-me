@@ -38,6 +38,8 @@ ollama:
   embedding-timeout-seconds: ${OLLAMA_EMBEDDING_TIMEOUT:120}
   # qwen3:1.7b on CPU: ~5-15s with think:false; 300s covers complex HR prompts
   chat-timeout-seconds: ${OLLAMA_CHAT_TIMEOUT:300}
+  # Temperature 0.0 = deterministic output — required for strict RAG mode
+  chat-temperature: ${OLLAMA_CHAT_TEMPERATURE:0.0}
 
 # SharePoint / Microsoft Graph configuration
 sharepoint:
@@ -79,6 +81,10 @@ bytehr:
     # Max characters of document context sent to the LLM.
     # Demo default: 1500. Production: 3000-6000.
     max-context-chars: ${BYTEHR_RAG_MAX_CONTEXT_CHARS:1500}
+    # Strict RAG mode: LLM is instructed to answer ONLY from retrieved context.
+    # When true, the model explicitly says it cannot find information if absent.
+    # Default: true (recommended — prevents hallucination of contacts, policies).
+    strict-mode: ${BYTEHR_RAG_STRICT_MODE:true}
 
 logging:
   level:

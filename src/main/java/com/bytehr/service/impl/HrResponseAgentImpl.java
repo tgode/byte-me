@@ -24,10 +24,13 @@ public class HrResponseAgentImpl implements HrResponseAgent {
     private static final String LOW_CONFIDENCE_RESPONSE =
             "I could not find a reliable answer. Please contact HR.";
 
-    private static final String SYSTEM_PROMPT = """
+    /**
+     * Standard system prompt — used when strict-mode=false.
+     */
+    private static final String SYSTEM_PROMPT_STANDARD = """
             You are ByteHR AI, an HR assistant for employees in Albania and Serbia.
-            
-            STRICT RULES:
+
+            RULES:
             1. Answer ONLY HR-related questions using the provided document context.
             2. NEVER invent, hallucinate, or assume company policies not present in the context.
             3. If the question is not HR-related, respond: "This question is outside my HR scope. Can I help you with vacation, leave, benefits, or other HR topics?"
@@ -35,10 +38,39 @@ public class HrResponseAgentImpl implements HrResponseAgent {
             5. Always include citations referencing the document name and relevant section.
             6. Keep responses clear and concise.
             7. Country-specific policies from the user's country take priority.
-            
+
             CONTEXT FROM HR DOCUMENTS:
             %s
-            
+
+            Respond in the language the user used.
+            """;
+
+    /**
+     * Strict system prompt — used when strict-mode=true (default).
+     * Explicitly forbids any information not present in the retrieved context.
+     */
+    private static final String SYSTEM_PROMPT_STRICT = """
+            You are ByteHR AI, an HR assistant for employees in Albania and Serbia.
+
+            STRICT RAG MODE — MANDATORY RULES (follow exactly):
+
+            1. Answer ONLY using the document context provided below. No exceptions.
+            2. Do NOT invent, estimate, or assume any information not explicitly stated in the context.
+            3. Do NOT add HR contact details, email addresses, phone numbers, or URLs unless they appear word-for-word in the context.
+            4. Do NOT mention carry-over policies, deadlines, benefits, bonuses, or procedures that are not explicitly written in the context.
+            5. If the answer to the question is NOT found in the context, respond with this exact phrase:
+               "I could not find this information in the HR documents."
+            6. If the question is not HR-related, respond:
+               "This question is outside my HR scope. Can I help you with vacation, leave, benefits, or other HR topics?"
+            7. Always respond in the SAME LANGUAGE as the user's question.
+            8. When you provide an answer, quote or closely paraphrase the relevant text from the context and name the source document.
+            9. Country-specific policies from the user's country take priority over global policies.
+            10. Keep responses concise and factual. Do not add qualifications, suggestions, or advice beyond what the documents state.
+
+            CONTEXT FROM HR DOCUMENTS:
+            %s
+
+            CRITICAL: Use ONLY the above context. Do not supplement with general knowledge.
             Respond in the language the user used.
             """;
 
@@ -57,14 +89,27 @@ public class HrResponseAgentImpl implements HrResponseAgent {
                                  String userId, String userName, List<String> conversationHistory) {
         long startTime = System.currentTimeMillis();
         String detectedLanguage = languageDetectionService.detectLanguage(question);
-        log.info("[RAG] Query: user='{}', country='{}', lang='{}', topK={}, maxContextChars={}",
-                userId, country, detectedLanguage, ragProperties.getTopK(), ragProperties.getMaxContextChars());
+        log.info("[RAG] Query: user='{}', country='{}', lang='{}', topK={}, maxContextChars={}, strictMode={}",
+                userId, country, detectedLanguage,
+                ragProperties.getTopK(), ragProperties.getMaxContextChars(), ragProperties.isStrictMode());
 
         // Retrieve relevant chunks using configurable topK
         List<RelevantChunk> chunks = vectorSearchService.search(question, country, ragProperties.getTopK());
 
+        // Validation logging — retrieved documents
         if (chunks.isEmpty()) {
-            log.info("[RAG] No chunks found — low confidence response");
+            log.info("[RAG] No chunks retrieved — returning low-confidence response");
+        } else {
+            log.info("[RAG] Retrieved {} chunk(s):", chunks.size());
+            for (RelevantChunk chunk : chunks) {
+                log.info("[RAG]   document='{}' score={} chunkIdx={}",
+                        chunk.getDocumentName(),
+                        String.format("%.4f", chunk.getSimilarityScore()),
+                        chunk.getChunkIndex());
+            }
+        }
+
+        if (chunks.isEmpty()) {
             return buildLowConfidenceResponse(detectedLanguage, startTime, userId, null, false);
         }
 
@@ -75,9 +120,13 @@ public class HrResponseAgentImpl implements HrResponseAgent {
             return buildLowConfidenceResponse(detectedLanguage, startTime, userId, null, false);
         }
 
-        // Build context with character limit to control prompt size
+        // Build context with character limit
         String context = buildContext(chunks, ragProperties.getMaxContextChars());
-        String systemPrompt = String.format(SYSTEM_PROMPT, context);
+        log.info("[RAG] Context size: {} chars", context.length());
+
+        // Select prompt template based on strict mode
+        String promptTemplate = ragProperties.isStrictMode() ? SYSTEM_PROMPT_STRICT : SYSTEM_PROMPT_STANDARD;
+        String systemPrompt = String.format(promptTemplate, context);
 
         // Build message list: system + history + current question
         List<OllamaMessage> messages = new ArrayList<>();
@@ -94,21 +143,22 @@ public class HrResponseAgentImpl implements HrResponseAgent {
 
         messages.add(OllamaMessage.builder().role("user").content(question).build());
 
-        // Log prompt statistics before sending to LLM
+        // Prompt stats before LLM call
         int totalPromptChars = messages.stream().mapToInt(m -> m.getContent().length()).sum();
-        // Rough estimation: ~4 chars/token (averaged across English, Albanian, Serbian)
         int estimatedTokens = totalPromptChars / 4;
-        log.debug("[RAG] Prompt stats: messages={}, totalChars={}, estimatedTokens=~{}, " +
-                  "contextChars={}, historyTurns={}",
-                messages.size(), totalPromptChars, estimatedTokens,
-                context.length(), recentHistory.size() / 2);
+        log.debug("[RAG] Prompt stats: messages={}, totalChars={}, estimatedTokens=~{}, historyTurns={}",
+                messages.size(), totalPromptChars, estimatedTokens, recentHistory.size() / 2);
 
         String rawAnswer = chatService.generateAnswer(messages);
         List<Citation> citations = buildCitations(chunks);
 
+        // Validation logging — final answer
+        log.info("[RAG] Answer length: {} chars", rawAnswer.length());
+
         long responseTimeMs = System.currentTimeMillis() - startTime;
-        log.info("[RAG] Answered in {}ms: confidence={}, chunks={}, citations={}",
-                responseTimeMs, String.format("%.3f", maxScore), chunks.size(), citations.size());
+        log.info("[RAG] Answered in {}ms: confidence={}, chunks={}, citations={}, strictMode={}",
+                responseTimeMs, String.format("%.3f", maxScore),
+                chunks.size(), citations.size(), ragProperties.isStrictMode());
 
         // Persist conversation turn
         conversationService.saveConversation(conversationId, userId, userName, country, question, rawAnswer, maxScore);
@@ -127,7 +177,7 @@ public class HrResponseAgentImpl implements HrResponseAgent {
 
     /**
      * Builds a context string from retrieved chunks, capped at maxContextChars total.
-     * Chunks are included in relevance order. A chunk that overflows the budget is truncated.
+     * Chunks are included in relevance order. Overflowing chunks are truncated.
      */
     private String buildContext(List<RelevantChunk> chunks, int maxContextChars) {
         StringBuilder sb = new StringBuilder();

@@ -23,6 +23,7 @@ public class OllamaClient {
     private final String chatModel;
     private final long embeddingTimeoutSeconds;
     private final long chatTimeoutSeconds;
+    private final double chatTemperature;
 
     public OllamaClient(
             WebClient.Builder webClientBuilder,
@@ -30,13 +31,15 @@ public class OllamaClient {
             @Value("${ollama.embedding-model}") String embeddingModel,
             @Value("${ollama.chat-model}") String chatModel,
             @Value("${ollama.embedding-timeout-seconds:${ollama.timeout-seconds:120}}") long embeddingTimeoutSeconds,
-            @Value("${ollama.chat-timeout-seconds:${ollama.timeout-seconds:300}}") long chatTimeoutSeconds) {
+            @Value("${ollama.chat-timeout-seconds:${ollama.timeout-seconds:300}}") long chatTimeoutSeconds,
+            @Value("${ollama.chat-temperature:0.0}") double chatTemperature) {
         this.webClient = webClientBuilder.baseUrl(baseUrl).build();
         this.baseUrl = baseUrl;
         this.embeddingModel = embeddingModel;
         this.chatModel = chatModel;
         this.embeddingTimeoutSeconds = embeddingTimeoutSeconds;
         this.chatTimeoutSeconds = chatTimeoutSeconds;
+        this.chatTemperature = chatTemperature;
     }
 
     /**
@@ -126,7 +129,7 @@ public class OllamaClient {
                 .messages(messages)
                 .stream(false)
                 .options(OllamaChatOptions.builder()
-                        .temperature(0.1)
+                        .temperature(chatTemperature)
                         .numCtx(4096)
                         .think(false)
                         .build())
