@@ -60,7 +60,15 @@ document:
   chunk-size: ${DOCUMENT_CHUNK_SIZE:1000}
   chunk-overlap: ${DOCUMENT_CHUNK_OVERLAP:200}
 
-logging:
+# ByteHR document source configuration
+# type: "local" (default, for hackathon MVP) or "sharepoint" (production)
+bytehr:
+  source:
+    type: ${BYTEHR_SOURCE_TYPE:local}
+    local-path: ${BYTEHR_LOCAL_PATH:./sample-data/hr-documents}
+    sync-interval-ms: ${BYTEHR_SYNC_INTERVAL_MS:3600000}
+
+
   level:
     com.bytehr: INFO
     org.hibernate.SQL: WARN

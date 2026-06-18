@@ -1,6 +1,8 @@
 package com.bytehr.api;
 
 import com.bytehr.api.dto.SyncResponse;
+import com.bytehr.config.SourceProperties;
+import com.bytehr.repository.DocumentRepository;
 import com.bytehr.service.DocumentSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Admin endpoint to manually trigger SharePoint document synchronization.
+ * Endpoint to trigger document synchronization (works for both local and SharePoint sources).
  */
 @RestController
 @RequestMapping("/api/sync")
@@ -19,21 +21,31 @@ import org.springframework.web.bind.annotation.RestController;
 public class SyncController {
 
     private final DocumentSyncService documentSyncService;
+    private final DocumentRepository documentRepository;
+    private final SourceProperties sourceProperties;
 
     @PostMapping
     public ResponseEntity<SyncResponse> triggerSync() {
-        log.info("Manual sync triggered via API");
+        log.info("Manual sync triggered via API (source={})", sourceProperties.getType());
+        long start = System.currentTimeMillis();
         try {
-            documentSyncService.synchronize();
+            int processed = documentSyncService.synchronize();
+            long total = documentRepository.count();
             return ResponseEntity.ok(SyncResponse.builder()
                     .status("success")
-                    .message("Synchronization completed successfully.")
+                    .documentsProcessed(processed)
+                    .totalDocumentsIndexed(total)
+                    .durationMs(System.currentTimeMillis() - start)
+                    .sourceType(sourceProperties.getType())
+                    .message(processed + " document(s) processed. " + total + " total indexed.")
                     .build());
         } catch (Exception e) {
             log.error("Manual sync failed", e);
             return ResponseEntity.internalServerError()
                     .body(SyncResponse.builder()
                             .status("error")
+                            .sourceType(sourceProperties.getType())
+                            .durationMs(System.currentTimeMillis() - start)
                             .message("Synchronization failed: " + e.getMessage())
                             .build());
         }

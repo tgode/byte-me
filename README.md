@@ -55,3 +55,44 @@ curl -X POST http://localhost:8080/api/sync  # First document sync
 - Conversation context (follow-up questions)
 - Country-aware: Albania and Serbia policies separated
 - Fully local — no paid AI services required
+
+## Local Document Mode (Hackathon MVP)
+
+The default mode uses **local HR documents** from `sample-data/hr-documents/` instead of SharePoint.
+No Azure credentials are required for the demo.
+
+### Quick demo start
+
+```bash
+cp .env.example .env               # defaults are already set for local mode
+docker compose up -d               # starts API, PostgreSQL, Ollama
+docker compose logs -f ollama-init # wait for qwen3:8b + nomic-embed-text (~10 min)
+curl -X POST http://localhost:8080/api/sync  # index all 11 HR documents
+```
+
+### Sample documents included
+
+| Folder | Documents |
+|---|---|
+| `albania/` | Vacation policy, Employee benefits, Sick leave |
+| `serbia/` | Vacation policy, Employee benefits, Sick leave |
+| `global/` | Remote work, Public holidays 2026, Onboarding, Travel reimbursement, Equipment request, Payroll |
+
+### Demo questions to try
+
+- "How many vacation days do I have?" (English)
+- "Sa ditë pushimi kam?" (Albanian)
+- "Koliko dana godišnjeg odmora imam?" (Serbian)
+- "Can I work from home?"
+- "What happens to unused vacation days?"
+
+### Adding documents
+
+Drop `.md`, `.txt`, `.pdf`, or `.docx` files into `sample-data/hr-documents/` and re-run sync.
+
+### Switch to SharePoint
+
+Set `BYTEHR_SOURCE_TYPE=sharepoint` in `.env` and provide SharePoint credentials.
+See [docs/deployment/sharepoint-setup.md](docs/deployment/sharepoint-setup.md).
+
+Full guide: [docs/local-document-mode.md](docs/local-document-mode.md)

@@ -13,5 +13,8 @@ public class SyncResponse {
 
     private String status;
     private int documentsProcessed;
+    private long totalDocumentsIndexed;
+    private long durationMs;
+    private String sourceType;
     private String message;
 }

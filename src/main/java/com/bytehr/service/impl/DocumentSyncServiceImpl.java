@@ -8,6 +8,7 @@ import com.bytehr.service.DocumentProcessorService;
 import com.bytehr.service.DocumentSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
+@ConditionalOnProperty(name = "bytehr.source.type", havingValue = "sharepoint")
 @Slf4j
 @RequiredArgsConstructor
 public class DocumentSyncServiceImpl implements DocumentSyncService {
@@ -28,14 +30,14 @@ public class DocumentSyncServiceImpl implements DocumentSyncService {
     @Override
     @Scheduled(fixedRateString = "${sharepoint.sync-interval-ms:3600000}",
                initialDelay = 10000)
-    public void synchronize() {
+    public int synchronize() {
         log.info("Starting SharePoint document synchronization...");
         AtomicInteger processed = new AtomicInteger(0);
 
         List<SharePointFile> remoteFiles = sharePointClient.listDocuments();
         if (remoteFiles.isEmpty()) {
             log.info("No documents found in SharePoint or sync disabled.");
-            return;
+            return 0;
         }
 
         for (SharePointFile remoteFile : remoteFiles) {
@@ -77,5 +79,6 @@ public class DocumentSyncServiceImpl implements DocumentSyncService {
         }
 
         log.info("SharePoint synchronization complete. Documents processed: {}", processed.get());
+        return processed.get();
     }
 }

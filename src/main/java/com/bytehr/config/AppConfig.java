@@ -1,11 +1,14 @@
 package com.bytehr.config;
 
+import com.bytehr.config.SourceProperties;
 import org.apache.tika.Tika;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
+@EnableConfigurationProperties(SourceProperties.class)
 public class AppConfig {
 
     @Bean
