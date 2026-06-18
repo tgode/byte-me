@@ -5,6 +5,7 @@ import com.bytehr.service.DocumentSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/sync")
 @Slf4j
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class SyncController {
 
     private final DocumentSyncService documentSyncService;
