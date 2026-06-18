@@ -76,7 +76,7 @@ document:
 bytehr:
   source:
     type: ${BYTEHR_SOURCE_TYPE:local}
-    local-path: ${BYTEHR_LOCAL_PATH:./sample-data/hr-documents}
+    local-path: ${BYTEHR_LOCAL_PATH:./docs/sample-data/hr-documents}
     sync-interval-ms: ${BYTEHR_SYNC_INTERVAL_MS:3600000}
   rag:
     # Number of document chunks retrieved per query.
