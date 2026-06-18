@@ -123,8 +123,8 @@ export class MessageInputComponent {
     }
   }
 
-  onEnter(event: KeyboardEvent): void {
-    if (!event.shiftKey) {
+  onEnter(event: Event): void {
+    if (!(event as KeyboardEvent).shiftKey) {
       event.preventDefault();
       this.sendMessage();
     }

@@ -13,7 +13,7 @@ import { MessageListComponent } from '../message-list/message-list.component';
 import { MessageInputComponent } from '../message-input/message-input.component';
 import { ChatService } from '../../services/chat.service';
 import { ChatMessage } from '../../models/chat.model';
-import { v4 as uuidv4 } from '../../shared/uuid';
+import { uuidv4 } from '../../shared/uuid';
 
 @Component({
   selector: 'app-chat-window',

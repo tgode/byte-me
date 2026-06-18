@@ -3,12 +3,10 @@ package com.bytehr.integration.sharepoint;
 import com.azure.identity.ClientSecretCredential;
 import com.azure.identity.ClientSecretCredentialBuilder;
 import com.bytehr.integration.sharepoint.dto.SharePointFile;
-import com.microsoft.graph.authentication.TokenCredentialAuthProvider;
 import com.microsoft.graph.models.DriveItem;
-import com.microsoft.graph.requests.DriveItemCollectionPage;
-import com.microsoft.graph.requests.GraphServiceClient;
+import com.microsoft.graph.models.DriveItemCollectionResponse;
+import com.microsoft.graph.serviceclient.GraphServiceClient;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Request;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -24,7 +22,7 @@ public class SharePointClient {
 
     private static final Set<String> SUPPORTED_EXTENSIONS = Set.of("pdf", "docx", "xlsx", "pptx");
 
-    private final GraphServiceClient<Request> graphClient;
+    private final GraphServiceClient graphClient;
     private final String siteId;
     private final String driveId;
     private final boolean syncEnabled;
@@ -47,12 +45,7 @@ public class SharePointClient {
                     .clientSecret(clientSecret)
                     .build();
 
-            TokenCredentialAuthProvider authProvider = new TokenCredentialAuthProvider(
-                    List.of("https://graph.microsoft.com/.default"), credential);
-
-            this.graphClient = GraphServiceClient.builder()
-                    .authenticationProvider(authProvider)
-                    .buildClient();
+            this.graphClient = new GraphServiceClient(credential, "https://graph.microsoft.com/.default");
         } else {
             log.warn("SharePoint sync is disabled or credentials are not configured.");
             this.graphClient = null;
@@ -70,62 +63,60 @@ public class SharePointClient {
 
         List<SharePointFile> files = new ArrayList<>();
         try {
-            DriveItemCollectionPage items = graphClient
-                    .sites(siteId)
-                    .drives(driveId)
-                    .root()
+            DriveItemCollectionResponse response = graphClient
+                    .drives()
+                    .byDriveId(driveId)
+                    .items()
+                    .byDriveItemId("root")
                     .children()
-                    .buildRequest()
                     .get();
 
-            collectSupportedFiles(items, files);
+            collectSupportedFiles(response, files);
         } catch (Exception e) {
             log.error("Failed to list SharePoint documents", e);
         }
         return files;
     }
 
-    private void collectSupportedFiles(DriveItemCollectionPage page, List<SharePointFile> files) {
-        if (page == null) return;
+    private void collectSupportedFiles(DriveItemCollectionResponse response, List<SharePointFile> files) {
+        if (response == null || response.getValue() == null) return;
 
-        for (DriveItem item : page.getCurrentPage()) {
-            if (item.file != null) {
-                String extension = getExtension(item.name);
+        for (DriveItem item : response.getValue()) {
+            if (item.getFile() != null) {
+                String extension = getExtension(item.getName());
                 if (SUPPORTED_EXTENSIONS.contains(extension)) {
+                    Object downloadUrlObj = item.getAdditionalData() != null
+                            ? item.getAdditionalData().get("@microsoft.graph.downloadUrl")
+                            : null;
+                    String downloadUrl = downloadUrlObj != null ? downloadUrlObj.toString() : null;
+
                     files.add(SharePointFile.builder()
-                            .id(item.id)
-                            .name(item.name)
-                            .webUrl(item.webUrl)
-                            .downloadUrl(item.additionalDataManager().get("@microsoft.graph.downloadUrl") != null
-                                    ? item.additionalDataManager().get("@microsoft.graph.downloadUrl").getAsString()
-                                    : null)
-                            .size(item.size)
-                            .lastModified(item.lastModifiedDateTime != null
-                                    ? item.lastModifiedDateTime.toInstant()
+                            .id(item.getId())
+                            .name(item.getName())
+                            .webUrl(item.getWebUrl())
+                            .downloadUrl(downloadUrl)
+                            .size(item.getSize())
+                            .lastModified(item.getLastModifiedDateTime() != null
+                                    ? item.getLastModifiedDateTime().toInstant()
                                     : Instant.now())
-                            .mimeType(item.file.mimeType)
+                            .mimeType(item.getFile().getMimeType())
                             .fileExtension(extension)
                             .build());
                 }
-            } else if (item.folder != null) {
-                // Recurse into subfolders
+            } else if (item.getFolder() != null) {
                 try {
-                    DriveItemCollectionPage children = graphClient
-                            .sites(siteId)
-                            .drives(driveId)
-                            .items(item.id)
+                    DriveItemCollectionResponse children = graphClient
+                            .drives()
+                            .byDriveId(driveId)
+                            .items()
+                            .byDriveItemId(item.getId())
                             .children()
-                            .buildRequest()
                             .get();
                     collectSupportedFiles(children, files);
                 } catch (Exception e) {
-                    log.warn("Failed to list contents of folder: {}", item.name, e);
+                    log.warn("Failed to list contents of folder: {}", item.getName(), e);
                 }
             }
-        }
-
-        if (page.getNextPage() != null) {
-            collectSupportedFiles(page.getNextPage().buildRequest().get(), files);
         }
     }
 
@@ -137,11 +128,11 @@ public class SharePointClient {
             throw new IllegalStateException("SharePoint client not initialized");
         }
         try (InputStream stream = graphClient
-                .sites(siteId)
-                .drives(driveId)
-                .items(itemId)
+                .drives()
+                .byDriveId(driveId)
+                .items()
+                .byDriveItemId(itemId)
                 .content()
-                .buildRequest()
                 .get()) {
             return stream != null ? stream.readAllBytes() : new byte[0];
         } catch (Exception e) {
