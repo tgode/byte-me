@@ -44,11 +44,10 @@ import { Citation } from '../../models/chat.model';
   `,
   styles: [`
     .citation-panel {
-      background: #F3F2F1;
-      border-left: 3px solid #0078D4;
-      border-radius: 4px;
+      background: var(--c-primary-light);
+      border-left: 3px solid var(--c-primary);
+      border-radius: var(--radius-sm);
       padding: 8px 12px;
-      margin-top: 8px;
       font-size: 12px;
     }
     .citation-header {
@@ -56,30 +55,22 @@ import { Citation } from '../../models/chat.model';
       align-items: center;
       gap: 6px;
       font-weight: 600;
-      color: #323130;
+      color: var(--c-text);
       margin-bottom: 6px;
     }
     .citation-icon {
       font-size: 14px;
       width: 14px;
       height: 14px;
-      color: #0078D4;
+      color: var(--c-primary);
     }
-    .citations-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .citation-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 6px;
-    }
+    .citations-list { display: flex; flex-direction: column; gap: 6px; }
+    .citation-item  { display: flex; align-items: flex-start; gap: 6px; }
     .doc-icon {
       font-size: 14px;
       width: 14px;
       height: 14px;
-      color: #605E5C;
+      color: var(--c-text-secondary);
       margin-top: 1px;
       flex-shrink: 0;
     }
@@ -89,21 +80,18 @@ import { Citation } from '../../models/chat.model';
       align-items: center;
       gap: 6px;
     }
-    .doc-name {
-      font-weight: 500;
-      color: #201F1E;
-    }
+    .doc-name { font-weight: 500; color: var(--c-text); }
     .meta {
-      color: #605E5C;
-      background: #E1DFDD;
-      padding: 1px 6px;
-      border-radius: 10px;
+      color: var(--c-text-secondary);
+      background: var(--c-border);
+      padding: 1px 7px;
+      border-radius: var(--radius-full);
     }
     .view-link {
       display: flex;
       align-items: center;
       gap: 2px;
-      color: #0078D4;
+      color: var(--c-primary);
       text-decoration: none;
       font-size: 11px;
     }

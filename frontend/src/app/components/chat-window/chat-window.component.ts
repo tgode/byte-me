@@ -30,7 +30,7 @@ import { uuidv4 } from '../../shared/uuid';
       <!-- ── Header ── -->
       <header class="chat-header">
         <div class="header-left">
-          <div class="header-avatar">
+          <div class="header-avatar" [class.thinking]="isLoading()">
             <mat-icon>support_agent</mat-icon>
           </div>
           <div class="header-info">
@@ -43,27 +43,25 @@ import { uuidv4 } from '../../shared/uuid';
         </div>
 
         <div class="header-actions">
-          <button mat-icon-button class="sm"
+          <button mat-icon-button class="sm action-btn"
                   matTooltip="Sync HR documents"
-                  (click)="syncDocuments()"
-                  aria-label="Sync documents">
+                  (click)="syncDocuments()">
             <mat-icon>sync</mat-icon>
           </button>
-          <button mat-icon-button class="sm"
+          <button mat-icon-button class="sm action-btn"
                   matTooltip="Clear conversation"
-                  (click)="clearConversation()"
-                  aria-label="Clear conversation">
+                  (click)="clearConversation()">
             <mat-icon>delete_outline</mat-icon>
           </button>
         </div>
       </header>
 
-      <!-- ── Message area ── -->
+      <!-- ── Messages ── -->
       <div class="messages-scroll" #scrollContainer>
         <app-message-list [messages]="messages()" />
       </div>
 
-      <!-- ── Input bar ── -->
+      <!-- ── Input ── -->
       <app-message-input
         #inputComponent
         (messageSent)="onMessageSent($event)"
@@ -72,12 +70,15 @@ import { uuidv4 } from '../../shared/uuid';
     </div>
   `,
   styles: [`
+    :host { display: contents; }
+
     .chat-window {
       display: flex;
       flex-direction: column;
       height: 100%;
       background: var(--c-bg);
       overflow: hidden;
+      transition: background var(--t-slow);
     }
 
     /* ── Header ── */
@@ -91,6 +92,7 @@ import { uuidv4 } from '../../shared/uuid';
       border-bottom: 1px solid var(--c-border);
       flex-shrink: 0;
       gap: 12px;
+      transition: background var(--t-slow), border-color var(--t-slow);
     }
     .header-left {
       display: flex;
@@ -98,8 +100,8 @@ import { uuidv4 } from '../../shared/uuid';
       gap: 10px;
     }
     .header-avatar {
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       background: var(--c-primary);
       color: #fff;
@@ -107,7 +109,16 @@ import { uuidv4 } from '../../shared/uuid';
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      transition: box-shadow var(--t-base);
       mat-icon { font-size: 20px; width: 20px; height: 20px; }
+    }
+    .header-avatar.thinking {
+      box-shadow: 0 0 0 3px rgba(var(--c-primary-rgb), 0.25);
+      animation: avatar-pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes avatar-pulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(var(--c-primary-rgb), 0.25); }
+      50%       { box-shadow: 0 0 0 6px rgba(var(--c-primary-rgb), 0.08); }
     }
     .header-info {
       display: flex;
@@ -124,7 +135,7 @@ import { uuidv4 } from '../../shared/uuid';
       display: flex;
       align-items: center;
       gap: 5px;
-      font-size: 11px;
+      font-size: 11.5px;
       color: var(--c-text-secondary);
       line-height: 1.2;
     }
@@ -132,25 +143,30 @@ import { uuidv4 } from '../../shared/uuid';
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: #107C10;
+      background: var(--c-online);
       flex-shrink: 0;
-      transition: background 0.3s;
+      transition: background var(--t-base);
     }
     .status-dot.thinking {
-      background: #FFB900;
-      animation: pulse 1s ease-in-out infinite;
+      background: var(--c-thinking);
+      animation: dot-blink 0.9s ease-in-out infinite;
     }
-    @keyframes pulse {
+    @keyframes dot-blink {
       0%, 100% { opacity: 1; }
-      50%       { opacity: 0.3; }
+      50%       { opacity: 0.2; }
     }
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 2px;
     }
+    .action-btn {
+      color: var(--c-text-muted) !important;
+      transition: color var(--t-fast) !important;
+    }
+    .action-btn:hover { color: var(--c-text) !important; }
 
-    /* ── Messages ── */
+    /* ── Messages scroll ── */
     .messages-scroll {
       flex: 1;
       overflow-y: auto;
@@ -173,7 +189,7 @@ export class ChatWindowComponent implements OnInit, OnChanges, OnDestroy, AfterV
   private readonly chatService = inject(ChatService);
   private readonly snackBar    = inject(MatSnackBar);
 
-  private readonly _messages = signal<ChatMessage[]>([]);
+  private readonly _messages  = signal<ChatMessage[]>([]);
   readonly messages  = this._messages.asReadonly();
 
   private readonly _isLoading = signal(false);
@@ -181,8 +197,6 @@ export class ChatWindowComponent implements OnInit, OnChanges, OnDestroy, AfterV
 
   private shouldScrollToBottom = false;
   private suggestionListener!: EventListener;
-
-  // Per-conversation message store (keyed by conversationId)
   private readonly messageStore = new Map<string, ChatMessage[]>();
 
   ngOnInit(): void {
@@ -195,12 +209,8 @@ export class ChatWindowComponent implements OnInit, OnChanges, OnDestroy, AfterV
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['conversationId']) {
-      // Save current messages
       const prev = changes['conversationId'].previousValue;
-      if (prev) {
-        this.messageStore.set(prev, this._messages());
-      }
-      // Restore or clear for new conversation
+      if (prev) this.messageStore.set(prev, this._messages());
       const next = changes['conversationId'].currentValue as string;
       this._messages.set(this.messageStore.get(next) ?? []);
       this._isLoading.set(false);
@@ -222,47 +232,34 @@ export class ChatWindowComponent implements OnInit, OnChanges, OnDestroy, AfterV
   onMessageSent(text: string): void {
     if (!text.trim() || this._isLoading()) return;
 
-    const userMsg: ChatMessage = {
-      id: uuidv4(), role: 'user',
-      content: text, timestamp: new Date()
-    };
-    const loadingMsg: ChatMessage = {
-      id: uuidv4(), role: 'assistant',
-      content: '', timestamp: new Date(), loading: true
-    };
+    const userMsg: ChatMessage = { id: uuidv4(), role: 'user',      content: text, timestamp: new Date() };
+    const loadMsg: ChatMessage = { id: uuidv4(), role: 'assistant', content: '',   timestamp: new Date(), loading: true };
 
-    this._messages.update(msgs => [...msgs, userMsg, loadingMsg]);
+    this._messages.update(m => [...m, userMsg, loadMsg]);
     this._isLoading.set(true);
     this.inputComponent?.setDisabled(true);
     this.shouldScrollToBottom = true;
 
-    // Notify parent so sidebar can show conversation title
     const title = text.length > 40 ? text.slice(0, 40) + '…' : text;
     this.conversationStarted.emit({ id: this.conversationId, title, preview: text });
 
-    this.chatService.sendMessage({
-      message: text,
-      conversationId: this.conversationId
-    }).subscribe({
-      next: (response) => {
-        this._messages.update(msgs =>
-          msgs.map(m => m.id === loadingMsg.id
-            ? { ...m, content: response.answer, citations: response.citations,
-                confidenceScore: response.confidenceScore, loading: false }
+    this.chatService.sendMessage({ message: text, conversationId: this.conversationId }).subscribe({
+      next: (res) => {
+        this._messages.update(msgs => msgs.map(m =>
+          m.id === loadMsg.id
+            ? { ...m, content: res.answer, citations: res.citations, confidenceScore: res.confidenceScore, loading: false }
             : m
-          )
-        );
+        ));
         this._isLoading.set(false);
         this.inputComponent?.setDisabled(false);
         this.shouldScrollToBottom = true;
       },
       error: (err: Error) => {
-        this._messages.update(msgs =>
-          msgs.map(m => m.id === loadingMsg.id
+        this._messages.update(msgs => msgs.map(m =>
+          m.id === loadMsg.id
             ? { ...m, content: err.message || 'An error occurred. Please try again.', loading: false }
             : m
-          )
-        );
+        ));
         this._isLoading.set(false);
         this.inputComponent?.setDisabled(false);
         this.shouldScrollToBottom = true;

@@ -18,35 +18,30 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     .loading-wrapper {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 8px 14px;
-      background: #fff;
-      border-radius: 18px;
-      border-top-left-radius: 4px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-      max-width: 180px;
+      gap: 8px;
     }
     .dot-typing {
       display: flex;
-      gap: 5px;
+      gap: 4px;
     }
     .dot-typing span {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
-      background: #0078D4;
+      background: var(--c-primary);
       animation: bounce 1.2s infinite ease-in-out;
+      display: block;
     }
     .dot-typing span:nth-child(1) { animation-delay: 0s; }
     .dot-typing span:nth-child(2) { animation-delay: 0.2s; }
     .dot-typing span:nth-child(3) { animation-delay: 0.4s; }
     @keyframes bounce {
-      0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
-      40%            { transform: scale(1.0); opacity: 1; }
+      0%, 60%, 100% { transform: translateY(0);    opacity: 0.4; }
+      30%            { transform: translateY(-5px); opacity: 1;   }
     }
     .loading-text {
       font-size: 12px;
-      color: #605E5C;
+      color: var(--c-text-secondary);
       font-style: italic;
     }
   `]

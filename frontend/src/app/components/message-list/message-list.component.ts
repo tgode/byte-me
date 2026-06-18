@@ -2,82 +2,95 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { CitationPanelComponent } from '../citation-panel/citation-panel.component';
-import { LoadingIndicatorComponent } from '../loading-indicator/loading-indicator.component';
 import { ChatMessage } from '../../models/chat.model';
 
 @Component({
   selector: 'app-message-list',
   standalone: true,
-  imports: [CommonModule, MatIconModule, CitationPanelComponent, LoadingIndicatorComponent],
+  imports: [CommonModule, MatIconModule, CitationPanelComponent],
   template: `
-    <div class="messages-container">
+    <div class="msg-list">
 
-      <!-- ── Empty state ── -->
+      <!-- ─── Empty state ─── -->
       @if (!messages || messages.length === 0) {
         <div class="empty-state">
-          <div class="empty-logo">
-            <mat-icon>support_agent</mat-icon>
+
+          <div class="empty-hero">
+            <div class="hero-ring hero-ring--2"></div>
+            <div class="hero-ring hero-ring--1"></div>
+            <div class="hero-icon">
+              <mat-icon>support_agent</mat-icon>
+            </div>
           </div>
-          <h2 class="empty-title">How can I help you?</h2>
-          <p class="empty-sub">Ask me anything about HR policies, leave, benefits, or other workplace topics.</p>
-          <div class="suggestion-row">
+
+          <h2 class="empty-title">How can I help you today?</h2>
+          <p class="empty-sub">
+            Ask me anything about HR policies, leave, benefits,<br>or other workplace topics.
+          </p>
+
+          <div class="chips-grid">
             @for (s of suggestions; track s.label) {
-              <button class="suggestion-chip" (click)="onSuggestion(s.text)">
-                <span class="chip-emoji">{{ s.emoji }}</span>
-                <span>{{ s.label }}</span>
+              <button class="chip" (click)="onSuggestion(s.text)">
+                <span class="chip-icon">{{ s.emoji }}</span>
+                <span class="chip-label">{{ s.label }}</span>
+                <mat-icon class="chip-arrow">arrow_forward</mat-icon>
               </button>
             }
           </div>
+
         </div>
       }
 
-      <!-- ── Messages ── -->
+      <!-- ─── Messages ─── -->
       @for (msg of messages; track msg.id) {
-        <div class="msg-row" [class.user]="msg.role === 'user'" [class.bot]="msg.role === 'assistant'">
+        <div class="msg-wrap" [class.user-wrap]="msg.role === 'user'">
 
-          <!-- Bot avatar (left) -->
+          <!-- Bot avatar -->
           @if (msg.role === 'assistant') {
-            <div class="avatar bot-avatar" aria-hidden="true">
+            <div class="avatar bot-av">
               <mat-icon>support_agent</mat-icon>
             </div>
           }
 
           <div class="bubble-col" [class.user-col]="msg.role === 'user'">
 
-            <!-- Role label -->
             <span class="role-label">{{ msg.role === 'user' ? 'You' : 'ByteHR AI' }}</span>
 
-            <!-- Bubble -->
             <div class="bubble"
                  [class.user-bubble]="msg.role === 'user'"
                  [class.bot-bubble]="msg.role === 'assistant'">
 
               @if (msg.loading) {
-                <app-loading-indicator />
+                <div class="typing-dots">
+                  <span></span><span></span><span></span>
+                </div>
               } @else {
-                <div class="msg-text" [innerHTML]="format(msg.content)"></div>
+                <div class="msg-body" [innerHTML]="format(msg.content)"></div>
 
                 @if (msg.role === 'assistant' && msg.citations?.length) {
-                  <app-citation-panel [citations]="msg.citations!" />
+                  <div class="citation-wrap">
+                    <app-citation-panel [citations]="msg.citations!" />
+                  </div>
                 }
 
                 @if (msg.role === 'assistant' && msg.confidenceScore && msg.confidenceScore > 0) {
-                  <div class="confidence"
-                       [class.high]="msg.confidenceScore >= 0.8"
-                       [class.low]="msg.confidenceScore < 0.6">
-                    <mat-icon inline>verified</mat-icon>
-                    {{ (msg.confidenceScore * 100).toFixed(0) }}% confidence
+                  <div class="conf-badge"
+                       [class.conf-high]="msg.confidenceScore >= 0.75"
+                       [class.conf-mid]="msg.confidenceScore >= 0.5 && msg.confidenceScore < 0.75"
+                       [class.conf-low]="msg.confidenceScore < 0.5">
+                    <mat-icon inline>shield</mat-icon>
+                    {{ (msg.confidenceScore * 100).toFixed(0) }}% match
                   </div>
                 }
               }
             </div>
 
-            <span class="timestamp">{{ msg.timestamp | date:'HH:mm' }}</span>
+            <time class="msg-time">{{ msg.timestamp | date:'HH:mm' }}</time>
           </div>
 
-          <!-- User avatar (right) -->
+          <!-- User avatar -->
           @if (msg.role === 'user') {
-            <div class="avatar user-avatar" aria-hidden="true">
+            <div class="avatar user-av">
               <mat-icon>person</mat-icon>
             </div>
           }
@@ -85,110 +98,154 @@ import { ChatMessage } from '../../models/chat.model';
         </div>
       }
 
+      <!-- Bottom padding -->
+      <div style="height: 16px"></div>
+
     </div>
   `,
   styles: [`
-    .messages-container {
+    .msg-list {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      padding: 20px 16px 8px;
+      padding: 16px 20px 0;
       flex: 1;
     }
 
-    /* ── Empty state ── */
+    /* ─── Empty state ─── */
     .empty-state {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      padding: 56px 24px 40px;
       flex: 1;
-      padding: 48px 24px;
       text-align: center;
-      min-height: 400px;
+      min-height: 380px;
     }
-    .empty-logo {
-      width: 64px;
-      height: 64px;
+
+    .empty-hero {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      margin-bottom: 28px;
+    }
+    .hero-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid var(--c-primary);
+      opacity: 0.15;
+      animation: ring-expand 2.4s ease-out infinite;
+    }
+    .hero-ring--1 { animation-delay: 0s; }
+    .hero-ring--2 { animation-delay: 1.2s; }
+    @keyframes ring-expand {
+      0%   { transform: scale(1);   opacity: 0.25; }
+      100% { transform: scale(1.8); opacity: 0;    }
+    }
+    .hero-icon {
+      position: absolute;
+      inset: 10px;
       border-radius: 50%;
       background: var(--c-primary);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 16px rgba(0,120,212,0.3);
-      mat-icon { font-size: 32px; width: 32px; height: 32px; }
+      box-shadow: var(--shadow-md);
+      mat-icon { font-size: 26px; width: 26px; height: 26px; }
     }
+
     .empty-title {
-      margin: 0 0 8px;
-      font-size: 22px;
-      font-weight: 600;
+      margin: 0 0 10px;
+      font-size: 20px;
+      font-weight: 700;
       color: var(--c-text);
+      letter-spacing: -0.3px;
     }
     .empty-sub {
-      margin: 0 0 28px;
-      font-size: 14px;
+      margin: 0 0 32px;
+      font-size: 13.5px;
       color: var(--c-text-secondary);
-      max-width: 380px;
-      line-height: 1.5;
+      line-height: 1.6;
     }
-    .suggestion-row {
-      display: flex;
-      flex-wrap: wrap;
+    .chips-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
-      justify-content: center;
+      width: 100%;
+      max-width: 440px;
     }
-    .suggestion-chip {
+    .chip {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 8px 16px;
+      gap: 8px;
+      padding: 10px 14px;
       background: var(--c-surface);
       border: 1px solid var(--c-border);
-      border-radius: var(--radius-full);
-      color: var(--c-primary);
+      border-radius: var(--radius-lg);
+      color: var(--c-text);
       font-size: 13px;
       font-family: inherit;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+      text-align: left;
+      transition: border-color var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
     }
-    .suggestion-chip:hover {
-      background: var(--c-primary-light);
+    .chip:hover {
       border-color: var(--c-primary);
-      box-shadow: var(--shadow-sm);
+      background: var(--c-primary-light);
+      box-shadow: var(--shadow-xs);
     }
-    .chip-emoji { font-size: 16px; }
+    .chip-icon   { font-size: 18px; flex-shrink: 0; }
+    .chip-label  { flex: 1; font-weight: 500; }
+    .chip-arrow  {
+      font-size: 14px !important;
+      width: 14px !important;
+      height: 14px !important;
+      color: var(--c-text-muted);
+      opacity: 0;
+      transition: opacity var(--t-fast), transform var(--t-fast);
+      flex-shrink: 0;
+    }
+    .chip:hover .chip-arrow { opacity: 1; transform: translateX(2px); }
 
-    /* ── Message row ── */
-    .msg-row {
+    /* ─── Message row ─── */
+    .msg-wrap {
       display: flex;
       align-items: flex-end;
-      gap: 10px;
-      padding: 4px 0;
+      gap: 8px;
+      margin-bottom: 12px;
     }
-    .user { flex-direction: row-reverse; }
+    .user-wrap { flex-direction: row-reverse; }
 
-    /* ── Avatars ── */
+    /* ─── Avatars ─── */
     .avatar {
-      width: 34px;
-      height: 34px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      mat-icon { font-size: 18px; width: 18px; height: 18px; }
+      mat-icon { font-size: 17px; width: 17px; height: 17px; }
     }
-    .bot-avatar  { background: var(--c-primary); color: #fff; }
-    .user-avatar { background: #E1DFDD; color: #323130; }
+    .bot-av  {
+      background: var(--c-primary);
+      color: #fff;
+      box-shadow: var(--shadow-xs);
+    }
+    .user-av {
+      background: var(--c-surface-raised);
+      color: var(--c-text-secondary);
+      border: 1px solid var(--c-border);
+    }
 
-    /* ── Bubble column ── */
+    /* ─── Bubble column ─── */
     .bubble-col {
       display: flex;
       flex-direction: column;
       gap: 3px;
-      max-width: min(68%, 560px);
+      max-width: min(66%, 580px);
     }
     .user-col { align-items: flex-end; }
 
@@ -196,52 +253,101 @@ import { ChatMessage } from '../../models/chat.model';
       font-size: 11px;
       font-weight: 600;
       color: var(--c-text-muted);
-      padding: 0 4px;
+      padding: 0 6px;
+      letter-spacing: 0.1px;
     }
 
-    /* ── Bubble ── */
+    /* ─── Bubbles ─── */
     .bubble {
       padding: 10px 14px;
       font-size: 14px;
-      line-height: 1.55;
+      line-height: 1.6;
       word-break: break-word;
+      transition: background var(--t-slow);
     }
     .user-bubble {
-      background: var(--c-bubble-user);
-      color: #fff;
-      border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
+      background: var(--c-bubble-user-bg);
+      color: var(--c-bubble-user-text);
+      border-radius: var(--radius-xl) var(--radius-xl) var(--radius-sm) var(--radius-xl);
     }
     .bot-bubble {
-      background: var(--c-bubble-bot);
-      color: var(--c-text);
-      border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--c-border-light);
+      background: var(--c-bubble-bot-bg);
+      color: var(--c-bubble-bot-text);
+      border-radius: var(--radius-xl) var(--radius-xl) var(--radius-xl) var(--radius-sm);
+      box-shadow: var(--shadow-xs);
+      border: 1px solid var(--c-bubble-bot-border);
     }
 
-    .msg-text { white-space: pre-wrap; }
+    /* ─── Typing dots ─── */
+    .typing-dots {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 2px;
+      min-width: 40px;
+    }
+    .typing-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--c-text-muted);
+      animation: bounce 1.2s ease-in-out infinite;
+      display: block;
+    }
+    .typing-dots span:nth-child(1) { animation-delay: 0s; }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0);    opacity: 0.4; }
+      30%            { transform: translateY(-5px); opacity: 1;   }
+    }
 
-    /* ── Confidence badge ── */
-    .confidence {
+    /* ─── Msg body markdown ─── */
+    .msg-body { white-space: pre-wrap; }
+    .msg-body ::ng-deep strong { font-weight: 600; }
+    .msg-body ::ng-deep em     { font-style: italic; }
+    .msg-body ::ng-deep code {
+      background: rgba(0,0,0,0.08);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 12.5px;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+    }
+    .user-bubble .msg-body ::ng-deep code {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* ─── Citation wrapper ─── */
+    .citation-wrap {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--c-border-light);
+    }
+
+    /* ─── Confidence badge ─── */
+    .conf-badge {
       display: inline-flex;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
       font-size: 11px;
-      font-weight: 500;
-      padding: 3px 8px;
+      font-weight: 600;
+      padding: 3px 10px;
       border-radius: var(--radius-full);
-      margin-top: 6px;
-      background: #EFF6FC;
-      color: var(--c-primary);
+      margin-top: 8px;
     }
-    .confidence.high { background: #DFF6DD; color: var(--c-success); }
-    .confidence.low  { background: #FFF4CE; color: var(--c-warning); }
+    .conf-high { background: #DFF6DD; color: #107C10; }
+    .conf-mid  { background: #FFF4CE; color: #7A5400; }
+    .conf-low  { background: #FDE7E9; color: #C50F1F; }
 
-    /* ── Timestamp ── */
-    .timestamp {
+    [data-theme="dark"] .conf-high { background: #143314; color: #92C353; }
+    [data-theme="dark"] .conf-mid  { background: #3A2B00; color: #F8D22A; }
+    [data-theme="dark"] .conf-low  { background: #3C1414; color: #F47574; }
+
+    /* ─── Timestamp ─── */
+    .msg-time {
       font-size: 10px;
       color: var(--c-text-muted);
-      padding: 0 4px;
+      padding: 0 6px;
     }
   `]
 })
@@ -249,17 +355,17 @@ export class MessageListComponent {
   @Input() messages: ChatMessage[] = [];
 
   readonly suggestions = [
-    { emoji: '🏖️', label: 'Vacation days', text: 'How many vacation days do I have?' },
-    { emoji: '🏥', label: 'Sick leave',    text: 'What is the sick leave policy?' },
-    { emoji: '🎁', label: 'Benefits',      text: 'What employee benefits are available?' },
-    { emoji: '📋', label: 'Work hours',    text: 'What are the working hours policy?' }
+    { emoji: '🏖️', label: 'Vacation days',  text: 'How many vacation days do I have?' },
+    { emoji: '🏥', label: 'Sick leave',      text: 'What is the sick leave policy?' },
+    { emoji: '🎁', label: 'Benefits',        text: 'What employee benefits are available?' },
+    { emoji: '📋', label: 'Working hours',   text: 'What are the working hours policy?' }
   ];
 
   format(content: string): string {
     return content
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code style="background:var(--c-border-light);padding:1px 5px;border-radius:3px;font-size:13px">$1</code>');
+      .replace(/`(.*?)`/g, '<code>$1</code>');
   }
 
   onSuggestion(text: string): void {

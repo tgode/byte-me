@@ -28,12 +28,16 @@ import { uuidv4 } from '../../shared/uuid';
     </div>
   `,
   styles: [`
+    :host { display: contents; }
+
     .app-shell {
       display: flex;
       height: 100vh;
       overflow: hidden;
       background: var(--c-bg);
+      transition: background var(--t-slow);
     }
+
     .main-area {
       flex: 1;
       min-width: 0;
@@ -46,11 +50,10 @@ import { uuidv4 } from '../../shared/uuid';
 export class ChatPageComponent {
 
   readonly activeConversationId = signal<string>(uuidv4());
-  readonly conversations = signal<ConversationPreview[]>([]);
+  readonly conversations        = signal<ConversationPreview[]>([]);
 
   startNewConversation(): void {
-    const newId = uuidv4();
-    this.activeConversationId.set(newId);
+    this.activeConversationId.set(uuidv4());
   }
 
   selectConversation(id: string): void {
@@ -59,8 +62,8 @@ export class ChatPageComponent {
 
   onConversationStarted(event: { id: string; title: string; preview: string }): void {
     this.conversations.update(list => {
-      const existing = list.find(c => c.id === event.id);
-      if (existing) {
+      const exists = list.find(c => c.id === event.id);
+      if (exists) {
         return list.map(c => c.id === event.id
           ? { ...c, title: event.title, preview: event.preview, timestamp: new Date() }
           : c
@@ -74,8 +77,6 @@ export class ChatPageComponent {
   }
 
   onConversationCleared(): void {
-    const newId = uuidv4();
-    this.activeConversationId.set(newId);
+    this.activeConversationId.set(uuidv4());
   }
 }
-
