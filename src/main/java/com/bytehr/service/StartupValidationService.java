@@ -55,20 +55,31 @@ public class StartupValidationService implements ApplicationRunner {
 
         if ("LOCAL".equals(type) && documentSyncService instanceof LocalDocumentSourceServiceImpl local) {
             discoverable = local.countDiscoverableFiles();
-            Path absPath = Path.of(System.getProperty("user.dir")).resolve(path);
+            Path configuredPath = Path.of(path);
+            Path absPath = configuredPath.isAbsolute()
+                    ? configuredPath
+                    : Path.of(System.getProperty("user.dir")).resolve(path);
             boolean pathExists = Files.exists(absPath);
+
+            // Structured discovery log (matches [Document Discovery] format used during sync)
+            log.info("[Document Discovery] rootPath={}", absPath.toAbsolutePath());
+            log.info("[Document Discovery] filesDiscovered={} pathExists={}",
+                    discoverable, pathExists);
+
             log.info("\n" +
-                    "╔══════════════════════════════════════════════╗\n" +
-                    "║              ByteHR AI  —  Startup           ║\n" +
-                    "╠══════════════════════════════════════════════╣\n" +
-                    "║  Source Type  : {:<30}║\n" +
-                    "║  Source Path  : {:<30}║\n" +
-                    "║  Path Exists  : {:<30}║\n" +
-                    "║  Files Found  : {:<30}║\n" +
-                    "║  Indexed Docs : {:<30}║\n" +
-                    "╚══════════════════════════════════════════════╝",
+                    "╔══════════════════════════════════════════════════════╗\n" +
+                    "║              ByteHR AI  —  Startup                  ║\n" +
+                    "╠══════════════════════════════════════════════════════╣\n" +
+                    "║  Source Type  : {:<36}║\n" +
+                    "║  Source Path  : {:<36}║\n" +
+                    "║  Abs Path     : {:<36}║\n" +
+                    "║  Path Exists  : {:<36}║\n" +
+                    "║  Files Found  : {:<36}║\n" +
+                    "║  Indexed Docs : {:<36}║\n" +
+                    "╚══════════════════════════════════════════════════════╝",
                     type, path,
-                    pathExists ? "YES" : "NO — run POST /api/sync after mount",
+                    absPath.toAbsolutePath().toString(),
+                    pathExists ? "YES" : "NO — check BYTEHR_LOCAL_PATH config",
                     discoverable,
                     indexedDocs);
         } else {

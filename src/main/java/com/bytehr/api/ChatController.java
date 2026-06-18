@@ -55,4 +55,16 @@ public class ChatController {
 
         return ResponseEntity.ok(response);
     }
+
+    private List<ChatCitation> mapCitations(List<Citation> citations) {
+        if (citations == null) return List.of();
+        return citations.stream()
+                .map(c -> ChatCitation.builder()
+                        .document(c.getDocumentName())
+                        .section(c.getSection())
+                        // sourcePath intentionally NOT mapped — never exposed in API responses
+                        .pageNumber(c.getPageNumber())
+                        .build())
+                .toList();
+    }
 }

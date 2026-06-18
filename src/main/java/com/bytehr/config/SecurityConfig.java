@@ -30,7 +30,8 @@ public class SecurityConfig {
                     new AntPathRequestMatcher("/api/sync"),
                     new AntPathRequestMatcher("/api/conversations/**"),
                     new AntPathRequestMatcher("/api/analytics/**"),
-                    new AntPathRequestMatcher("/api/documents/**")
+                    new AntPathRequestMatcher("/api/documents/**"),
+                    new AntPathRequestMatcher("/api/admin/**")
                 ).permitAll()
                 // Actuator
                 .requestMatchers(

@@ -83,7 +83,7 @@ document:
 bytehr:
   source:
     type: ${BYTEHR_SOURCE_TYPE:local}
-    local-path: ${BYTEHR_LOCAL_PATH:./sample-data/hr-documents}
+    local-path: ${BYTEHR_LOCAL_PATH:./docs/sample-data/hr-documents}
     sync-interval-ms: ${BYTEHR_SYNC_INTERVAL_MS:3600000}
   rag:
     # Number of document chunks retrieved per query.
@@ -96,6 +96,12 @@ bytehr:
     # When true, the model explicitly says it cannot find information if absent.
     # Default: true (recommended — prevents hallucination of contacts, policies).
     strict-mode: ${BYTEHR_RAG_STRICT_MODE:true}
+  security:
+    redaction:
+      # When true, PII (emails, phones, IBANs, national IDs) is redacted from
+      # document text before chunking and embedding. Prevents PII from entering
+      # the vector database or appearing in RAG answers.
+      enabled: ${BYTEHR_REDACTION_ENABLED:true}
 
 logging:
   level:

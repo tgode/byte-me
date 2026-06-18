@@ -1,5 +1,6 @@
 package com.bytehr.service.impl;
 
+import com.bytehr.config.SecurityProperties;
 import com.bytehr.model.Document;
 import com.bytehr.model.DocumentChunk;
 import com.bytehr.repository.DocumentChunkRepository;
@@ -7,7 +8,10 @@ import com.bytehr.repository.DocumentRepository;
 import com.bytehr.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tika.Tika;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.BodyContentHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -27,8 +31,9 @@ public class DocumentProcessorServiceImpl implements DocumentProcessorService {
     private final LanguageDetectionService languageDetectionService;
     private final ChunkingService chunkingService;
     private final EmbeddingService embeddingService;
+    private final RedactionService redactionService;
+    private final SecurityProperties securityProperties;
     private final JdbcTemplate jdbcTemplate;
-    private final Tika tika;
 
     @Value("${document.chunk-size}")
     private int chunkSize;
@@ -39,59 +44,64 @@ public class DocumentProcessorServiceImpl implements DocumentProcessorService {
     @Override
     @Transactional
     public void processDocument(Document document, byte[] fileContent) {
-        log.info("Processing document: {}", document.getName());
+        log.info("[Processor] Processing document: '{}' ({} bytes)", document.getName(), fileContent.length);
 
-        // Step 1: Extract text
-        String text = extractText(fileContent, document.getName());
-        if (text.isBlank()) {
-            log.warn("No text extracted from document: {}", document.getName());
+        // Step 1: Extract text and page count using Tika
+        ExtractionResult extraction = extractWithMetadata(fileContent, document.getName());
+        if (extraction.text().isBlank()) {
+            log.warn("[Processor] No text extracted from '{}' — skipping", document.getName());
             return;
         }
+        log.info("[Processor] Extracted: '{}' — chars={}, pages={}",
+                document.getName(), extraction.text().length(), extraction.pageCount());
 
         // Step 2: Detect language
-        String language = languageDetectionService.detectLanguage(text);
+        String language = languageDetectionService.detectLanguage(extraction.text());
         document.setLanguage(language);
-        log.debug("[Processor] Detected language='{}' for document '{}'", language, document.getName());
+        log.debug("[Processor] Detected language='{}' for '{}'", language, document.getName());
 
-        // Step 3: Remove old chunks for this document
+        // Step 3: Redact PII before any data enters the vector DB
+        String text = extraction.text();
+        if (securityProperties.getRedaction().isEnabled()) {
+            text = redactionService.redact(text);
+            log.info("[Processor] PII redaction applied to '{}'", document.getName());
+        }
+
+        // Step 4: Remove old chunks
         chunkRepository.deleteByDocumentId(document.getId());
 
-        // Step 4: Chunk content
+        // Step 5: Chunk
         List<String> chunkTexts = chunkingService.chunk(text, chunkSize, chunkOverlap);
-        log.info("Document '{}' split into {} chunks (chunkSize={}, overlap={})",
-                document.getName(), chunkTexts.size(), chunkSize, chunkOverlap);
+        int totalChunks = chunkTexts.size();
+        log.info("[Processor] '{}' → {} chunks (size={}, overlap={})",
+                document.getName(), totalChunks, chunkSize, chunkOverlap);
 
         int embeddingSuccesses = 0;
         int embeddingFailures = 0;
 
-        // Step 5: Generate embeddings and store chunks
-        for (int i = 0; i < chunkTexts.size(); i++) {
+        // Step 6: Embed and store each chunk
+        for (int i = 0; i < totalChunks; i++) {
             String chunkContent = chunkTexts.get(i);
 
-            // FIX: Use saveAndFlush() to immediately execute the INSERT via JPA before
-            // the JDBC UPDATE that writes the embedding vector.
-            //
-            // Root cause of NULL embeddings:
-            // save() only queues the INSERT in JPA's first-level cache — it is NOT sent
-            // to the database until the transaction flushes (at commit). The subsequent
-            // jdbcTemplate.update() runs via raw JDBC, finds no row with the chunk's UUID,
-            // and silently updates 0 rows. saveAndFlush() forces the INSERT to the database
-            // within the current transaction so the JDBC UPDATE finds the row.
+            // Estimate page number from chunk position
+            int estimatedPage = totalChunks > 0
+                    ? Math.max(1, (i * extraction.pageCount() / totalChunks) + 1)
+                    : 1;
+
             DocumentChunk chunk = DocumentChunk.builder()
                     .document(document)
                     .content(chunkContent)
                     .chunkIndex(i)
+                    .pageNumber(estimatedPage)
                     .build();
             chunk = chunkRepository.saveAndFlush(chunk);
 
-            log.debug("[Embedding] Requesting embedding for chunk {}/{} of '{}': chunkId={}, textLen={}",
-                    i + 1, chunkTexts.size(), document.getName(), chunk.getId(), chunkContent.length());
+            log.debug("[Embedding] Requesting chunk {}/{} of '{}': chunkId={}, textLen={}, page={}",
+                    i + 1, totalChunks, document.getName(), chunk.getId(), chunkContent.length(), estimatedPage);
 
             try {
                 float[] embedding = embeddingService.generateEmbedding(chunkContent);
-
-                log.debug("[Embedding] Received embedding for chunk {}/{}: dimension={}",
-                        i + 1, chunkTexts.size(), embedding.length);
+                log.debug("[Embedding] Received: dim={}", embedding.length);
 
                 String vectorLiteral = toVectorLiteral(embedding);
                 int rows = jdbcTemplate.update(
@@ -99,40 +109,68 @@ public class DocumentProcessorServiceImpl implements DocumentProcessorService {
                         vectorLiteral, chunk.getId());
 
                 if (rows == 1) {
-                    log.debug("[Embedding] Persisted embedding for chunk id={}: rowsUpdated={}",
-                            chunk.getId(), rows);
                     embeddingSuccesses++;
                 } else {
-                    log.error("[Embedding] FAILED to persist embedding for chunk id={}: rowsUpdated={}. " +
-                              "Expected 1 but got {}. The chunk INSERT may not have reached the DB.",
-                              chunk.getId(), rows, rows);
+                    log.error("[Embedding] FAILED to persist embedding for chunk id={}: rowsUpdated={}",
+                            chunk.getId(), rows);
                     embeddingFailures++;
                 }
             } catch (Exception e) {
-                log.error("[Embedding] Exception generating/persisting embedding for chunk {}/{} of '{}': {}",
-                        i + 1, chunkTexts.size(), document.getName(), e.getMessage(), e);
+                log.error("[Embedding] Exception on chunk {}/{} of '{}': {}",
+                        i + 1, totalChunks, document.getName(), e.getMessage(), e);
                 embeddingFailures++;
             }
         }
 
-        log.info("[Embedding] Document '{}': {}/{} embeddings persisted successfully ({} failed)",
-                document.getName(), embeddingSuccesses, chunkTexts.size(), embeddingFailures);
+        log.info("[Processor] '{}' complete: {}/{} embeddings OK, {} failed",
+                document.getName(), embeddingSuccesses, totalChunks, embeddingFailures);
 
-        // Step 6: Update document sync timestamp
+        // Step 7: Update sync timestamp
         document.setLastSync(Instant.now());
         documentRepository.save(document);
-
-        log.info("Finished processing document '{}': {} chunks stored, {} embeddings persisted",
-                document.getName(), chunkTexts.size(), embeddingSuccesses);
     }
 
-    private String extractText(byte[] fileContent, String filename) {
+    /**
+     * Extracts text and page count from a document using Tika's AutoDetectParser.
+     * Supports PDF, DOCX, XLSX, PPTX, TXT, MD and all other Tika-supported formats.
+     * Falls back gracefully on extraction errors.
+     */
+    private ExtractionResult extractWithMetadata(byte[] content, String filename) {
         try {
-            return tika.parseToString(new ByteArrayInputStream(fileContent));
+            BodyContentHandler handler = new BodyContentHandler(-1); // no char limit
+            Metadata metadata = new Metadata();
+            AutoDetectParser parser = new AutoDetectParser();
+            try (ByteArrayInputStream stream = new ByteArrayInputStream(content)) {
+                parser.parse(stream, handler, metadata, new ParseContext());
+            }
+            String text = handler.toString();
+            int pageCount = resolvePageCount(metadata, filename);
+            return new ExtractionResult(text, pageCount);
         } catch (Exception e) {
-            log.error("Text extraction failed for file: {}", filename, e);
-            return "";
+            log.error("[Processor] Text extraction failed for '{}': {}", filename, e.getMessage());
+            return new ExtractionResult("", 1);
         }
+    }
+
+    private int resolvePageCount(Metadata metadata, String filename) {
+        // Try PDF-specific page count first
+        for (String key : new String[]{
+                "xmpTPg:NPages", "pdf:PDFVersion", "meta:page-count",
+                "Page-Count", "cp:revision"}) {
+            String val = metadata.get(key);
+            if (val != null) {
+                try {
+                    int n = Integer.parseInt(val.trim());
+                    if (n > 0) return n;
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        // Check for PDF pages via the standard Tika Office key
+        String pages = metadata.get(org.apache.tika.metadata.Office.PAGE_COUNT);
+        if (pages != null) {
+            try { return Math.max(1, Integer.parseInt(pages.trim())); } catch (NumberFormatException ignored) {}
+        }
+        return 1;
     }
 
     private String toVectorLiteral(float[] vector) {
@@ -144,4 +182,7 @@ public class DocumentProcessorServiceImpl implements DocumentProcessorService {
         sb.append("]");
         return sb.toString();
     }
+
+    /** Carries extracted text and page count from a single Tika parse pass. */
+    private record ExtractionResult(String text, int pageCount) {}
 }

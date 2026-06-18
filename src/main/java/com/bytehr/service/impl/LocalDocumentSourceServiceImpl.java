@@ -23,7 +23,8 @@ import java.util.*;
 @RequiredArgsConstructor
 public class LocalDocumentSourceServiceImpl implements DocumentSyncService {
 
-    private static final Set<String> SUPPORTED_EXTENSIONS = Set.of("pdf", "docx", "txt", "md");
+    /** Supported document formats — must match Tika-parseable extensions. */
+    private static final Set<String> SUPPORTED_EXTENSIONS = Set.of("pdf", "docx", "pptx", "txt", "md");
 
     private final SourceProperties sourceProperties;
     private final DocumentRepository documentRepository;
@@ -33,31 +34,39 @@ public class LocalDocumentSourceServiceImpl implements DocumentSyncService {
     @Scheduled(fixedDelayString = "${bytehr.source.sync-interval-ms:3600000}", initialDelay = 5000)
     public int synchronize() {
         Path rootPath = resolveRootPath();
-        log.info("Starting local document synchronization from: {}", rootPath.toAbsolutePath());
+
+        log.info("[Document Discovery] rootPath={}", rootPath.toAbsolutePath());
 
         if (!Files.exists(rootPath)) {
-            log.warn("Local document path does not exist: {}. Skipping sync.", rootPath.toAbsolutePath());
+            log.warn("[Document Discovery] rootPath does not exist: {}. " +
+                     "Verify BYTEHR_LOCAL_PATH is set correctly.", rootPath.toAbsolutePath());
             return 0;
         }
 
         List<Path> files = scanFiles(rootPath);
-        log.info("Found {} supported document(s) in {}", files.size(), rootPath.toAbsolutePath());
 
         int processed = 0;
+        int skipped   = 0;
+
         for (Path file : files) {
             try {
-                processed += processFile(file, rootPath);
+                int result = processFile(file, rootPath);
+                if (result == 1) processed++; else skipped++;
             } catch (Exception e) {
-                log.error("Failed to process local file: {}", file, e);
+                log.error("[Document Discovery] Failed to process: {}", file.toAbsolutePath(), e);
+                skipped++;
             }
         }
 
-        log.info("Local synchronization complete. Documents processed: {}", processed);
+        log.info("[Document Discovery] filesDiscovered={} filesProcessed={} filesSkipped={}",
+                files.size(), processed, skipped);
         return processed;
     }
 
     /**
-     * Returns all supported files found recursively under the given root.
+     * Recursively scans for all supported files under rootPath.
+     * Logs every discovered file and explicitly skips Windows Zone.Identifier artifacts
+     * (files whose name contains ':') which appear when NTFS-sourced files are copied to Linux.
      */
     public List<Path> scanFiles(Path rootPath) {
         List<Path> files = new ArrayList<>();
@@ -65,29 +74,43 @@ public class LocalDocumentSourceServiceImpl implements DocumentSyncService {
             Files.walkFileTree(rootPath, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                    String ext = getExtension(file.getFileName().toString());
+                    String filename = file.getFileName().toString();
+
+                    // Skip Windows Zone.Identifier ADS artifacts (e.g. "file.pdf:Zone.Identifier")
+                    if (filename.contains(":")) {
+                        log.debug("[Document Discovery] Skipping Zone.Identifier artifact: {}",
+                                file.toAbsolutePath());
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    String ext = getExtension(filename);
                     if (SUPPORTED_EXTENSIONS.contains(ext)) {
+                        log.info("[Document Discovery] file={}", file.toAbsolutePath());
                         files.add(file);
+                    } else {
+                        log.debug("[Document Discovery] Skipping unsupported extension '{}': {}",
+                                ext, file.getFileName());
                     }
                     return FileVisitResult.CONTINUE;
                 }
 
                 @Override
                 public FileVisitResult visitFileFailed(Path file, IOException exc) {
-                    log.warn("Cannot access file: {}", file, exc);
+                    log.warn("[Document Discovery] Cannot access file: {}", file.toAbsolutePath(), exc);
                     return FileVisitResult.CONTINUE;
                 }
             });
         } catch (IOException e) {
-            log.error("Failed to scan local document path: {}", rootPath, e);
+            log.error("[Document Discovery] Walk failed for rootPath={}: {}",
+                    rootPath.toAbsolutePath(), e.getMessage(), e);
         }
         return files;
     }
 
     /**
-     * Processes a single file: detects new vs modified and runs the ingestion pipeline.
+     * Processes a single file: new → full ingestion, modified → re-ingest, unchanged → skip.
      *
-     * @return 1 if the file was processed, 0 if it was skipped (already indexed + unchanged)
+     * @return 1 if the file was processed (new or modified), 0 if skipped (unchanged)
      */
     private int processFile(Path file, Path rootPath) throws IOException {
         String localId = buildLocalId(file, rootPath);
@@ -95,19 +118,19 @@ public class LocalDocumentSourceServiceImpl implements DocumentSyncService {
 
         Optional<Document> existing = documentRepository.findBySharepointItemId(localId);
 
-        boolean isNew = existing.isEmpty();
+        boolean isNew      = existing.isEmpty();
         boolean isModified = existing.isPresent()
                 && existing.get().getLastModified() != null
                 && fileModified.isAfter(existing.get().getLastModified());
 
         if (!isNew && !isModified) {
-            log.debug("Skipping unchanged file: {}", file.getFileName());
+            log.debug("[Document Discovery] Unchanged, skipping: {}", file.getFileName());
             return 0;
         }
 
         String filename = file.getFileName().toString();
-        String ext = getExtension(filename);
-        String country = detectCountry(file, rootPath);
+        String ext      = getExtension(filename);
+        String country  = detectCountry(file, rootPath);
 
         Document document = isNew
                 ? Document.builder()
@@ -130,14 +153,16 @@ public class LocalDocumentSourceServiceImpl implements DocumentSyncService {
         byte[] content = Files.readAllBytes(file);
         documentProcessorService.processDocument(document, content);
 
-        log.info("{} local document: {} (country={})", isNew ? "Indexed new" : "Re-indexed modified",
-                filename, country != null ? country : "global");
+        log.info("[Document Discovery] {} document: '{}' country={} size={}KB",
+                isNew ? "Indexed new" : "Re-indexed modified",
+                filename, country != null ? country : "global",
+                Files.size(file) / 1024);
         return 1;
     }
 
     /**
      * Builds a stable unique ID for a local file from its path relative to the root.
-     * Format: {@code local://albania/vacation-policy.md}
+     * Format: {@code local://albania-docs/ZTP ENG.pdf}
      */
     private String buildLocalId(Path file, Path rootPath) {
         String relative = rootPath.relativize(file).toString().replace('\\', '/');
@@ -145,13 +170,17 @@ public class LocalDocumentSourceServiceImpl implements DocumentSyncService {
     }
 
     /**
-     * Infers a two-letter ISO country code from the path of the file.
-     * Convention: files under an "albania" folder → "AL", "serbia" → "RS".
+     * Infers country from folder path segment (case-insensitive).
+     *
+     * Supported patterns:
+     *   "albania", "albania-docs"          → AL
+     *   "serbia", "serbia-docs"            → RS
+     *   "sebia",  "sebia-docs"             → RS  (common typo tolerated)
      */
     private String detectCountry(Path file, Path rootPath) {
         String relative = rootPath.relativize(file).toString().toLowerCase().replace('\\', '/');
         if (relative.contains("albania")) return "AL";
-        if (relative.contains("serbia")) return "RS";
+        if (relative.contains("serbia") || relative.contains("sebia")) return "RS";
         return null;
     }
 
@@ -163,7 +192,6 @@ public class LocalDocumentSourceServiceImpl implements DocumentSyncService {
     private Path resolveRootPath() {
         String raw = sourceProperties.getLocalPath();
         Path p = Path.of(raw);
-        // Resolve relative paths against the current working directory
         return p.isAbsolute() ? p : Path.of(System.getProperty("user.dir")).resolve(p);
     }
 
