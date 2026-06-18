@@ -12,11 +12,11 @@
   },
   "name": {
     "short": "ByteHR AI",
-    "full": "ByteHR AI — HR Assistant"
+    "full": "ByteHR AI - HR Assistant"
   },
   "description": {
     "short": "AI-powered HR Assistant for employees.",
-    "full": "ByteHR AI answers your HR questions in Albanian, Serbian and English using official company policies from SharePoint. No need to search documents manually — just ask."
+    "full": "ByteHR AI answers your HR questions in Albanian, Serbian and English using official company policies from SharePoint. No need to search documents manually - just ask."
   },
   "icons": {
     "color": "color.png",
@@ -28,13 +28,28 @@
       "botId": "${{TEAMS_APP_ID}}",
       "scopes": ["personal"],
       "supportsFiles": false,
-      "isNotificationOnly": false
+      "isNotificationOnly": false,
+      "commandLists": [
+        {
+          "scopes": ["personal"],
+          "commands": [
+            {
+              "title": "Help",
+              "description": "Show available commands and how to use ByteHR AI"
+            },
+            {
+              "title": "Vacation",
+              "description": "Ask about vacation and leave policy"
+            },
+            {
+              "title": "Benefits",
+              "description": "Ask about employee benefits"
+            }
+          ]
+        }
+      ]
     }
   ],
   "permissions": ["identity", "messageTeamMembers"],
-  "validDomains": [],
-  "webApplicationInfo": {
-    "id": "${{TEAMS_APP_ID}}",
-    "resource": "api://bytehr.example.com/${{TEAMS_APP_ID}}"
-  }
+  "validDomains": []
 }
