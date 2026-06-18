@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/sync").permitAll()
                 .requestMatchers("/api/conversations/**").permitAll()
                 .requestMatchers("/api/analytics/**").permitAll()
+                .requestMatchers("/api/documents/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
