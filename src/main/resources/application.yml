@@ -18,26 +18,33 @@ spring:
     show-sql: false
     open-in-view: false
 
-  liquibase:
-    change-log: classpath:db/changelog/db.changelog-master.xml
+  flyway:
     enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
 
 server:
   port: ${SERVER_PORT:8080}
   servlet:
     context-path: /
+  tomcat:
+    max-swallow-size: -1
+
+spring.servlet:
+  multipart:
+    enabled: true
+    max-file-size: 50MB
+    max-request-size: 100MB
 
 # Ollama configuration
 ollama:
-  base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
-  embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+  base-url: ${OLLAMA_BASE_URL:http://[::1]:11434}
+  embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text:latest}
   chat-model: ${OLLAMA_CHAT_MODEL:qwen3:1.7b}
-  # Kept for backward compat; overridden by the specific timeouts below
-  timeout-seconds: ${OLLAMA_TIMEOUT:120}
-  # nomic-embed-text responds in <1s once loaded; 120s allows for cold model load
-  embedding-timeout-seconds: ${OLLAMA_EMBEDDING_TIMEOUT:120}
-  # qwen3:1.7b on CPU: ~5-15s with think:false; 300s covers complex HR prompts
+  timeout-seconds: ${OLLAMA_TIMEOUT:300}
   chat-timeout-seconds: ${OLLAMA_CHAT_TIMEOUT:300}
+  embedding-timeout-seconds: ${OLLAMA_EMBEDDING_TIMEOUT:120}
   # Temperature 0.0 = deterministic output — required for strict RAG mode
   chat-temperature: ${OLLAMA_CHAT_TEMPERATURE:0.0}
 

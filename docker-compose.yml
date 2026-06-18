@@ -57,8 +57,8 @@ services:
         OLLAMA_HOST=http://ollama:11434
         echo "Pulling nomic-embed-text..."
         ollama pull nomic-embed-text
-        echo "Pulling qwen3:1.7b..."
-        ollama pull qwen3:1.7b
+        echo "Pulling qwen3:14b..."
+        ollama pull qwen3:14b
         echo "Models ready."
     environment:
       - OLLAMA_HOST=http://ollama:11434
@@ -87,8 +87,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-bytehr}
       # Ollama
       OLLAMA_BASE_URL: http://ollama:11434
-      OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text}
-      OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen3:1.7b}
+      OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text:latest}
+      OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen3:14b}
       OLLAMA_EMBEDDING_TIMEOUT: ${OLLAMA_EMBEDDING_TIMEOUT:-120}
       OLLAMA_CHAT_TIMEOUT: ${OLLAMA_CHAT_TIMEOUT:-300}
       OLLAMA_CHAT_TEMPERATURE: ${OLLAMA_CHAT_TEMPERATURE:-0.0}
@@ -118,6 +118,23 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+
+  # ─────────────────────────────────────────────────────────────
+  # ByteHR Frontend (Angular 21)
+  # ─────────────────────────────────────────────────────────────
+  bytehr-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: bytehr-frontend
+    restart: unless-stopped
+    depends_on:
+      bytehr-api:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+    environment:
+      - API_URL=${API_URL:-http://localhost:8080}
 
 volumes:
   postgres_data:

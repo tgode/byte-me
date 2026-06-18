@@ -1,13 +1,10 @@
 package com.bytehr.api;
 
-import com.bytehr.api.dto.*;
+import com.bytehr.api.dto.ChatRequest;
+import com.bytehr.api.dto.HrChatResponse;
 import com.bytehr.service.ConversationService;
 import com.bytehr.service.HrResponseAgent;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,72 +16,42 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Direct chat endpoint for MVP testing and hackathon demonstrations.
- * <p>
- * Invokes the same RAG pipeline as the Teams webhook ({@code POST /api/messages})
- * but accepts a plain JSON request — no Bot Framework Activity format required.
+ * Primary REST API endpoint for the Angular frontend and direct API consumers.
  */
 @RestController
 @RequestMapping("/api/chat")
-@Tag(name = "Chat", description = "Direct RAG question-answering endpoint for MVP testing and demos")
+@Tag(name = "Chat", description = "HR question-answering endpoint (RAG pipeline)")
 @Slf4j
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class ChatController {
 
     private final HrResponseAgent hrResponseAgent;
     private final ConversationService conversationService;
 
     @PostMapping
-    @Operation(
-        summary = "Ask an HR question",
-        description = """
-            Submits a question to the ByteHR RAG pipeline and returns an answer generated
-            from indexed HR documents. The same pipeline is used by the Teams bot.
+    @Operation(summary = "Ask an HR question",
+        description = "Submits a question through the RAG pipeline. Returns an answer generated " +
+                      "from indexed HR documents with citations and a confidence score.")
+    public ResponseEntity<HrChatResponse> chat(@Valid @RequestBody ChatRequest request) {
+        log.info("Chat request from userId='{}', country='{}'", request.getUserId(), request.getCountry());
 
-            **Pipeline steps:**
-            1. Detect question language (Albanian / Serbian / English)
-            2. Generate question embedding (Ollama nomic-embed-text)
-            3. Cosine similarity search in pgvector, filtered by country
-            4. Build context from top-K document chunks
-            5. Generate answer with citations (Ollama qwen3:1.7b)
-
-            **Low confidence:** When no sufficiently relevant document chunks are found,
-            returns `answered: false` and a message to contact HR directly.
-            """
-    )
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Answer generated successfully",
-            content = @Content(schema = @Schema(implementation = ChatResponse.class))),
-        @ApiResponse(responseCode = "400", description = "Invalid request (blank question, bad country code)",
-            content = @Content(schema = @Schema(example = "{\"status\":400,\"error\":\"Bad Request\"}"))),
-        @ApiResponse(responseCode = "500", description = "Internal error (Ollama unreachable, DB unavailable)")
-    })
-    public ResponseEntity<ChatResponse> chat(@Valid @RequestBody ChatRequest request) {
-        String sessionId = (request.getSessionId() != null && !request.getSessionId().isBlank())
-                ? request.getSessionId()
+        String conversationId = request.getConversationId() != null
+                ? request.getConversationId()
                 : UUID.randomUUID().toString();
 
-        log.info("Chat request: question='{}', country='{}', sessionId='{}'",
-                request.getQuestion(), request.getCountry(), sessionId);
+        String userId   = request.getUserId()   != null ? request.getUserId()   : "anonymous";
+        String userName = request.getUserName() != null ? request.getUserName() : "Employee";
 
-        List<String> history = conversationService.getConversationHistory(sessionId, 6);
+        List<String> history = conversationService.getConversationHistory(conversationId, 6);
 
-        HrChatResponse hrResponse = hrResponseAgent.answer(
-                request.getQuestion(),
+        HrChatResponse response = hrResponseAgent.answer(
+                request.getMessage(),
                 request.getCountry(),
-                sessionId,
-                "api-user-" + sessionId,
-                "API User",
-                history
-        );
-
-        ChatResponse response = ChatResponse.builder()
-                .answer(hrResponse.getAnswer())
-                .citations(mapCitations(hrResponse.getCitations()))
-                .confidence(hrResponse.getConfidenceScore())
-                .detectedLanguage(hrResponse.getDetectedLanguage())
-                .answered(hrResponse.isAnswered())
-                .build();
+                conversationId,
+                userId,
+                userName,
+                history);
 
         return ResponseEntity.ok(response);
     }

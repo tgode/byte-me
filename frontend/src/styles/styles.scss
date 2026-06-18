@@ -1,0 +1,191 @@
+/* =========================================================
+   ByteHR AI – Global Styles
+   Microsoft Teams Fluent 2 – Light & Dark Mode
+   ========================================================= */
+
+@use '@angular/material' as mat;
+@import '@angular/material/prebuilt-themes/azure-blue.css';
+
+// ─── Light theme tokens ───────────────────────────────────────
+:root {
+  color-scheme: light;
+
+  // Brand (Teams Purple)
+  --c-primary:          #6264A7;
+  --c-primary-dark:     #494B88;
+  --c-primary-light:    #ECEDF7;
+  --c-primary-rgb:      98, 100, 167;
+
+  // Canvas
+  --c-bg:               #F5F5F5;
+  --c-surface:          #FFFFFF;
+  --c-surface-raised:   #FAFAFA;
+  --c-overlay:          rgba(0,0,0,0.4);
+
+  // Sidebar
+  --c-sidebar-bg:       #FFFFFF;
+  --c-sidebar-hover:    #F0F0F0;
+  --c-sidebar-active:   #ECEDF7;
+  --c-sidebar-border:   #E0E0E0;
+
+  // Text
+  --c-text:             #242424;
+  --c-text-secondary:   #616161;
+  --c-text-muted:       #8A8886;
+  --c-text-inverse:     #FFFFFF;
+
+  // Borders
+  --c-border:           #E0E0E0;
+  --c-border-light:     #F0F0F0;
+  --c-border-focus:     var(--c-primary);
+
+  // Bubbles
+  --c-bubble-user-bg:   #6264A7;
+  --c-bubble-user-text: #FFFFFF;
+  --c-bubble-bot-bg:    #FFFFFF;
+  --c-bubble-bot-text:  #242424;
+  --c-bubble-bot-border:#E0E0E0;
+
+  // Status
+  --c-online:           #92C353;
+  --c-thinking:         #F8D22A;
+  --c-error:            #C50F1F;
+  --c-warning:          #E97132;
+  --c-success:          #107C10;
+
+  // Shadows
+  --shadow-xs:   0 1px 2px rgba(0,0,0,0.06);
+  --shadow-sm:   0 1px 4px rgba(0,0,0,0.10);
+  --shadow-md:   0 4px 12px rgba(0,0,0,0.12);
+  --shadow-lg:   0 8px 28px rgba(0,0,0,0.16);
+  --shadow-glow: 0 0 0 3px rgba(98,100,167,0.18);
+
+  // Layout
+  --sidebar-width:      260px;
+  --sidebar-collapsed:  56px;
+  --header-height:      48px;
+  --input-area-height:  80px;
+
+  // Radius
+  --radius-xs:   3px;
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   18px;
+  --radius-full: 9999px;
+
+  // Transitions
+  --t-fast:   120ms ease;
+  --t-base:   200ms ease;
+  --t-slow:   300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// ─── Dark theme tokens ────────────────────────────────────────
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --c-primary:          #7B83EB;
+  --c-primary-dark:     #9299F7;
+  --c-primary-light:    #2D2E4A;
+  --c-primary-rgb:      123, 131, 235;
+
+  --c-bg:               #1B1B1B;
+  --c-surface:          #292929;
+  --c-surface-raised:   #333333;
+  --c-overlay:          rgba(0,0,0,0.6);
+
+  --c-sidebar-bg:       #1F1F1F;
+  --c-sidebar-hover:    #2A2A2A;
+  --c-sidebar-active:   #2D2E4A;
+  --c-sidebar-border:   #383838;
+
+  --c-text:             #FFFFFF;
+  --c-text-secondary:   #C7C7C7;
+  --c-text-muted:       #7A7A7A;
+  --c-text-inverse:     #1B1B1B;
+
+  --c-border:           #383838;
+  --c-border-light:     #2E2E2E;
+
+  --c-bubble-user-bg:   #7B83EB;
+  --c-bubble-user-text: #FFFFFF;
+  --c-bubble-bot-bg:    #333333;
+  --c-bubble-bot-text:  #FFFFFF;
+  --c-bubble-bot-border:#444444;
+
+  --c-online:           #92C353;
+  --c-thinking:         #F8D22A;
+  --c-error:            #F47574;
+  --c-warning:          #F4B860;
+  --c-success:          #54C254;
+
+  --shadow-xs:   0 1px 2px rgba(0,0,0,0.3);
+  --shadow-sm:   0 1px 4px rgba(0,0,0,0.4);
+  --shadow-md:   0 4px 12px rgba(0,0,0,0.5);
+  --shadow-lg:   0 8px 28px rgba(0,0,0,0.6);
+  --shadow-glow: 0 0 0 3px rgba(123,131,235,0.25);
+}
+
+// ─── Base reset ───────────────────────────────────────────────
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  height: 100%;
+  font-size: 14px;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue',
+               Arial, 'Noto Sans', sans-serif;
+  background: var(--c-bg);
+  color: var(--c-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background var(--t-slow), color var(--t-slow);
+}
+
+a { color: var(--c-primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+button { font-family: inherit; }
+
+// ─── Custom scrollbar ─────────────────────────────────────────
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--c-border);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--c-text-muted); }
+
+// ─── Angular Material overrides ───────────────────────────────
+.mat-toolbar             { background: transparent !important; }
+.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-color: var(--c-surface);
+  --mdc-snackbar-supporting-text-color: var(--c-text);
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--c-border);
+  box-shadow: var(--shadow-md) !important;
+}
+
+// Icon button sizes
+.mat-mdc-icon-button.sm {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 4px !important;
+  .mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+// Mat icon baseline fix
+.mat-icon { vertical-align: middle; }
+
+// Document viewer dialog - inherit CSS variables
+.doc-viewer-dialog .mat-mdc-dialog-container {
+  background: var(--c-surface);
+  color: var(--c-text);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}

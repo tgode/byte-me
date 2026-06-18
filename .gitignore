@@ -1,2 +1,4 @@
 target/
 docs/sample-data/
+frontend/.angular/
+frontend/node_modules/

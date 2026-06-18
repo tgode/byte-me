@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.17",
+  "version": "1.0.0",
+  "id": "fd5a8cce-3ab6-4147-b3ff-8c7b123247a",
+  "packageName": "com.bytehr.teams",
+  "developer": {
+    "name": "ByteHR Team",
+    "websiteUrl": "https://bytehr.example.com",
+    "privacyUrl": "https://bytehr.example.com/privacy",
+    "termsOfUseUrl": "https://bytehr.example.com/terms"
+  },
+  "name": {
+    "short": "ByteHR Assistant",
+    "full": "ByteHR AI - Intelligent HR Assistant"
+  },
+  "description": {
+    "short": "Your AI-powered HR Assistant, available 24/7.",
+    "full": "ByteHR AI is an enterprise-grade HR assistant that delivers instant, accurate answers to employee questions on company policies, benefits, leave entitlements, payroll, and onboarding - powered by advanced AI and your organisation's official HR documentation across Albania, Serbia, and global operations."
+  },
+  "icons": {
+    "color": "color.jpg",
+    "outline": "outline.png"
+  },
+  "accentColor": "#0078D4",
+  "staticTabs": [
+    {
+      "entityId": "bytehr-chat",
+      "name": "HR Assistant",
+      "contentUrl": "https://m6w6ww9l-4200.euw.devtunnels.ms/",
+      "websiteUrl": "https://m6w6ww9l-4200.euw.devtunnels.ms/",
+      "scopes": ["personal"]
+    }
+  ],
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": [
+    "m6w6ww9l-4200.euw.devtunnels.ms",
+    "m6w6ww9l.euw.devtunnels.ms"
+  ]
+}

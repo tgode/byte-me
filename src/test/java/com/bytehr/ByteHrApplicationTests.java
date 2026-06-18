@@ -6,7 +6,7 @@ import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
 @TestPropertySource(properties = {
-        "spring.liquibase.enabled=false",
+        "spring.flyway.enabled=false",
         "spring.jpa.hibernate.ddl-auto=none",
         "sharepoint.sync-enabled=false",
         "ollama.base-url=http://localhost:11434",

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["angular:styles/component:css;4f8fac4b2e96871d28e6aa20fec2fa8fbe7387aac34706d5de385b235c304935;/home/tgode/env/byte-me/frontend/src/app/app.component.ts"],
+  "sourcesContent": ["\n    :host {\n      display: block;\n      height: 100vh;\n      overflow: hidden;\n    }\n  "],
+  "mappings": ";AACI;AACE,WAAS;AACT,UAAQ;AACR,YAAU;AACZ;",
+  "names": []
+}

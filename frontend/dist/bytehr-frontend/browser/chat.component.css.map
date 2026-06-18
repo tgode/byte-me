@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["angular:styles/component:css;d995d648c0dc0bbec83f790989e0697caeac722b9f4220191f07999852548063;/home/tgode/env/byte-me/frontend/src/app/pages/chat/chat.component.ts"],
+  "sourcesContent": ["\n    :host { display: contents; }\n\n    .app-shell {\n      display: flex;\n      height: 100vh;\n      overflow: hidden;\n      background: var(--c-bg);\n      transition: background var(--t-slow);\n    }\n\n    .main-area {\n      flex: 1;\n      min-width: 0;\n      display: flex;\n      flex-direction: column;\n      overflow: hidden;\n    }\n  "],
+  "mappings": ";AACI;AAAQ,WAAS;AAAU;AAE3B,CAAC;AACC,WAAS;AACT,UAAQ;AACR,YAAU;AACV,cAAY,IAAI;AAChB,cAAY,WAAW,IAAI;AAC7B;AAEA,CAAC;AACC,QAAM;AACN,aAAW;AACX,WAAS;AACT,kBAAgB;AAChB,YAAU;AACZ;",
+  "names": []
+}
