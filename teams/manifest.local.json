@@ -1,0 +1,43 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.17",
+  "version": "1.0.0",
+  "id": "fd5a8cce-3ab6-4147-b3ff-8c7b123247a1",
+  "developer": {
+    "name": "ByteHR Team",
+    "websiteUrl": "https://bytehr.example.com",
+    "privacyUrl": "https://bytehr.example.com/privacy",
+    "termsOfUseUrl": "https://bytehr.example.com/terms"
+  },
+  "name": {
+    "short": "ByteHR AI (Local)",
+    "full": "ByteHR AI - HR Assistant (Local Dev)"
+  },
+  "description": {
+    "short": "AI-powered HR Assistant for employees.",
+    "full": "ByteHR AI local development build. Tab points to http://localhost:4200."
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#0078D4",
+  "staticTabs": [
+    {
+      "entityId": "bytehr-chat",
+      "name": "HR Assistant",
+      "contentUrl": "https://psd8xfj9-4200.euw.devtunnels.ms/",
+      "websiteUrl": "https://psd8xfj9-4200.euw.devtunnels.ms/",
+      "scopes": [
+        "personal"
+      ]
+    }
+  ],
+  "permissions": [
+    "identity",
+    "messageTeamMembers"
+  ],
+  "validDomains": [
+    "psd8xfj9-4200.euw.devtunnels.ms"
+  ]
+}
