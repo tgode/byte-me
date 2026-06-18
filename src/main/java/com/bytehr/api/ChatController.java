@@ -95,7 +95,7 @@ public class ChatController {
                 .map(c -> ChatCitation.builder()
                         .document(c.getDocumentName())
                         .section(c.getSection())
-                        .sourcePath(c.getSourcePath())
+                        // sourcePath intentionally NOT mapped — never exposed in API responses
                         .pageNumber(c.getPageNumber())
                         .build())
                 .toList();

@@ -95,8 +95,9 @@ public class TeamsController {
                 if (citation.getPageNumber() != null) {
                     sb.append(" (Page ").append(citation.getPageNumber()).append(")");
                 }
-                if (citation.getSourcePath() != null && !citation.getSourcePath().isBlank()) {
-                    sb.append(" — [View document](").append(citation.getSourcePath()).append(")");
+                // Only show link for SharePoint documents (webUrl) — never expose filesystem paths
+                if (citation.getWebUrl() != null && !citation.getWebUrl().isBlank()) {
+                    sb.append(" — [View document](").append(citation.getWebUrl()).append(")");
                 }
                 sb.append("\n");
             }

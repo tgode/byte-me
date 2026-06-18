@@ -31,7 +31,8 @@ public class SecurityConfig {
                 .requestMatchers(
                     new AntPathRequestMatcher("/api/messages"),
                     new AntPathRequestMatcher("/api/sync"),
-                    new AntPathRequestMatcher("/api/chat")
+                    new AntPathRequestMatcher("/api/chat"),
+                    new AntPathRequestMatcher("/api/admin/**")
                 ).permitAll()
                 // Actuator
                 .requestMatchers(

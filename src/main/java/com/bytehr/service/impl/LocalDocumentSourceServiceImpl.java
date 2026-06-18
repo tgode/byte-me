@@ -148,10 +148,18 @@ public class LocalDocumentSourceServiceImpl implements DocumentSyncService {
      * Infers a two-letter ISO country code from the path of the file.
      * Convention: files under an "albania" folder → "AL", "serbia" → "RS".
      */
+    /**
+     * Infers country from the folder path segment.
+     *
+     * Supported patterns (case-insensitive):
+     *   "albania", "albania-docs"          → AL
+     *   "serbia", "serbia-docs"            → RS
+     *   "sebia", "sebia-docs"              → RS  (common typo tolerated)
+     */
     private String detectCountry(Path file, Path rootPath) {
         String relative = rootPath.relativize(file).toString().toLowerCase().replace('\\', '/');
         if (relative.contains("albania")) return "AL";
-        if (relative.contains("serbia")) return "RS";
+        if (relative.contains("serbia") || relative.contains("sebia")) return "RS";
         return null;
     }
 
