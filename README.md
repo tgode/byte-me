@@ -21,7 +21,7 @@ ByteHR Teams Bot  ──►  Spring Boot API  ──►  Ollama (LLM)
 |---|---|
 | Backend | Java 21, Spring Boot 3 |
 | Database | PostgreSQL 16 + pgvector |
-| AI / LLM | Ollama — `qwen2.5-coder` |
+| AI / LLM | Ollama — `qwen3:8b` |
 | Embeddings | Ollama — `nomic-embed-text` |
 | Documents | SharePoint via Microsoft Graph |
 | Interface | Microsoft Teams (Personal App) |

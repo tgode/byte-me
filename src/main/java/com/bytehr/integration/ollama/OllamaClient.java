@@ -63,7 +63,7 @@ public class OllamaClient {
     }
 
     /**
-     * Generates an answer using qwen2.5-coder given a list of chat messages.
+     * Generates an answer using qwen3:8b given a list of chat messages.
      */
     public String generateAnswer(List<OllamaMessage> messages) {
         log.debug("Generating chat answer with {} messages", messages.size());

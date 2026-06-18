@@ -57,8 +57,8 @@ services:
         OLLAMA_HOST=http://ollama:11434
         echo "Pulling nomic-embed-text..."
         ollama pull nomic-embed-text
-        echo "Pulling qwen2.5-coder..."
-        ollama pull qwen2.5-coder
+        echo "Pulling qwen3:8b..."
+        ollama pull qwen3:8b
         echo "Models ready."
     environment:
       - OLLAMA_HOST=http://ollama:11434
@@ -88,7 +88,7 @@ services:
       # Ollama
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text}
-      OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen2.5-coder}
+      OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen3:8b}
       OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-60}
       # SharePoint / Microsoft Graph
       SHAREPOINT_TENANT_ID: ${SHAREPOINT_TENANT_ID:-}
