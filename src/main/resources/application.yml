@@ -31,7 +31,7 @@ server:
 ollama:
   base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
   embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
-  chat-model: ${OLLAMA_CHAT_MODEL:qwen3:8b}
+  chat-model: ${OLLAMA_CHAT_MODEL:qwen3:4b}
   # Kept for backward compat; overridden by the specific timeouts below
   timeout-seconds: ${OLLAMA_TIMEOUT:120}
   # nomic-embed-text responds in <1s once loaded; 120s allows for cold model load
@@ -72,6 +72,13 @@ bytehr:
     type: ${BYTEHR_SOURCE_TYPE:local}
     local-path: ${BYTEHR_LOCAL_PATH:./sample-data/hr-documents}
     sync-interval-ms: ${BYTEHR_SYNC_INTERVAL_MS:3600000}
+  rag:
+    # Number of document chunks retrieved per query.
+    # Demo default: 3 (faster). Production: 5-10 (more accurate).
+    top-k: ${BYTEHR_RAG_TOP_K:3}
+    # Max characters of document context sent to the LLM.
+    # Demo default: 1500. Production: 3000-6000.
+    max-context-chars: ${BYTEHR_RAG_MAX_CONTEXT_CHARS:1500}
 
 logging:
   level:
@@ -79,6 +86,7 @@ logging:
     com.bytehr.service.impl.DocumentProcessorServiceImpl: DEBUG
     com.bytehr.service.impl.EmbeddingServiceImpl: DEBUG
     com.bytehr.service.impl.VectorSearchServiceImpl: DEBUG
+    com.bytehr.service.impl.HrResponseAgentImpl: DEBUG
     com.bytehr.integration.ollama.OllamaClient: DEBUG
     org.hibernate.SQL: WARN
 
