@@ -24,7 +24,10 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/messages").permitAll()
+                .requestMatchers("/api/chat").permitAll()
                 .requestMatchers("/api/sync").permitAll()
+                .requestMatchers("/api/conversations/**").permitAll()
+                .requestMatchers("/api/analytics/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .anyRequest().authenticated()
             );

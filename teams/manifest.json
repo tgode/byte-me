@@ -1,6 +1,6 @@
 {
-  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
-  "manifestVersion": "1.16",
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.17",
   "version": "1.0.0",
   "id": "${{TEAMS_APP_ID}}",
   "packageName": "com.bytehr.teams",
@@ -16,7 +16,7 @@
   },
   "description": {
     "short": "AI-powered HR Assistant for employees.",
-    "full": "ByteHR AI answers your HR questions in Albanian, Serbian and English using official company policies from SharePoint. No need to search documents manually - just ask."
+    "full": "ByteHR AI answers your HR questions in Albanian, Serbian and English using official company policies stored in SharePoint. Supports country-specific policies for Albania and Serbia. No need to search documents manually - just ask."
   },
   "icons": {
     "color": "color.png",
@@ -39,17 +39,40 @@
             },
             {
               "title": "Vacation",
-              "description": "Ask about vacation and leave policy"
+              "description": "Ask about vacation and annual leave policy"
             },
             {
               "title": "Benefits",
-              "description": "Ask about employee benefits"
+              "description": "Ask about employee benefits and perks"
+            },
+            {
+              "title": "SickLeave",
+              "description": "Ask about sick leave and medical policy"
+            },
+            {
+              "title": "Onboarding",
+              "description": "Ask about onboarding and new employee procedures"
             }
           ]
         }
       ]
     }
   ],
+  "staticTabs": [
+    {
+      "entityId": "bytehr-chat",
+      "name": "HR Assistant",
+      "contentUrl": "https://${{NGROK_DOMAIN}}/",
+      "websiteUrl": "https://${{NGROK_DOMAIN}}/",
+      "scopes": ["personal"]
+    }
+  ],
   "permissions": ["identity", "messageTeamMembers"],
-  "validDomains": []
+  "validDomains": [
+    "${{NGROK_DOMAIN}}"
+  ],
+  "webApplicationInfo": {
+    "id": "${{TEAMS_APP_ID}}",
+    "resource": "api://${{NGROK_DOMAIN}}/${{TEAMS_APP_ID}}"
+  }
 }
