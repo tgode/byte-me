@@ -15,6 +15,6 @@ public class OllamaEmbeddingRequest {
     @JsonProperty("model")
     private String model;
 
-    @JsonProperty("prompt")
-    private String prompt;
+    @JsonProperty("input")
+    private String input;
 }

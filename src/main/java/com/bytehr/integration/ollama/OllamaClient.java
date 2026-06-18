@@ -39,22 +39,27 @@ public class OllamaClient {
 
         OllamaEmbeddingRequest request = OllamaEmbeddingRequest.builder()
                 .model(embeddingModel)
-                .prompt(text)
+                .input(text)
                 .build();
 
         OllamaEmbeddingResponse response = webClient.post()
-                .uri("/api/embeddings")
+                .uri("/api/embed")
                 .bodyValue(request)
                 .retrieve()
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                        clientResponse -> clientResponse.bodyToMono(String.class).map(body -> {
+                            log.error("Ollama /api/embed error: HTTP {} — {}", clientResponse.statusCode(), body);
+                            return new IllegalStateException("Ollama embedding failed: " + body);
+                        }))
                 .bodyToMono(OllamaEmbeddingResponse.class)
                 .timeout(Duration.ofSeconds(timeoutSeconds))
                 .block();
 
-        if (response == null || response.getEmbedding() == null || response.getEmbedding().isEmpty()) {
+        if (response == null || response.getEmbeddings() == null || response.getEmbeddings().isEmpty()) {
             throw new IllegalStateException("Ollama returned empty embedding for model: " + embeddingModel);
         }
 
-        List<Float> embedding = response.getEmbedding();
+        List<Float> embedding = response.getEmbeddings().get(0);
         float[] result = new float[embedding.size()];
         for (int i = 0; i < embedding.size(); i++) {
             result[i] = embedding.get(i);

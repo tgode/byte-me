@@ -29,6 +29,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/conversations/**").permitAll()
                 .requestMatchers("/api/analytics/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             );
         return http.build();

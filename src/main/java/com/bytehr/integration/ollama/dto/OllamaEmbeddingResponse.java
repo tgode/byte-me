@@ -14,6 +14,6 @@ import java.util.List;
 @AllArgsConstructor
 public class OllamaEmbeddingResponse {
 
-    @JsonProperty("embedding")
-    private List<Float> embedding;
+    @JsonProperty("embeddings")
+    private List<List<Float>> embeddings;
 }
