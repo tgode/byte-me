@@ -32,7 +32,12 @@ ollama:
   base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
   embedding-model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
   chat-model: ${OLLAMA_CHAT_MODEL:qwen3:8b}
-  timeout-seconds: ${OLLAMA_TIMEOUT:60}
+  # Kept for backward compat; overridden by the specific timeouts below
+  timeout-seconds: ${OLLAMA_TIMEOUT:120}
+  # nomic-embed-text responds in <1s once loaded; 120s allows for cold model load
+  embedding-timeout-seconds: ${OLLAMA_EMBEDDING_TIMEOUT:120}
+  # qwen3:8b on CPU: ~30s with think:false, ~55s with thinking; 300s covers complex HR prompts
+  chat-timeout-seconds: ${OLLAMA_CHAT_TIMEOUT:300}
 
 # SharePoint / Microsoft Graph configuration
 sharepoint:

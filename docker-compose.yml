@@ -89,7 +89,8 @@ services:
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text}
       OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen3:8b}
-      OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-60}
+      OLLAMA_EMBEDDING_TIMEOUT: ${OLLAMA_EMBEDDING_TIMEOUT:-120}
+      OLLAMA_CHAT_TIMEOUT: ${OLLAMA_CHAT_TIMEOUT:-300}
       # Document source (local = MVP default; sharepoint = production)
       BYTEHR_SOURCE_TYPE: ${BYTEHR_SOURCE_TYPE:-local}
       BYTEHR_LOCAL_PATH: /app/sample-data/hr-documents
