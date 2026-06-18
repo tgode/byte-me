@@ -1,59 +1,94 @@
 /* =========================================================
-   ByteHR AI - Global Styles
-   Teams-compatible design language (Microsoft Fluent-inspired)
+   ByteHR AI – Global Styles
+   Microsoft Teams–inspired Fluent design
    ========================================================= */
 
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
-// ─── Variables ───────────────────────────────────────────────
+// ─── Design tokens ────────────────────────────────────────────
 :root {
-  --bytehr-primary:     #0078D4;
-  --bytehr-primary-dark: #005A9E;
-  --bytehr-accent:      #00B4D8;
-  --bytehr-bg:          #F5F5F5;
-  --bytehr-surface:     #FFFFFF;
-  --bytehr-text:        #201F1E;
-  --bytehr-subtext:     #605E5C;
-  --bytehr-border:      #E1DFDD;
-  --bytehr-user-bubble: #0078D4;
-  --bytehr-bot-bubble:  #FFFFFF;
-  --bytehr-shadow:      0 2px 8px rgba(0,0,0,0.12);
+  // Brand
+  --c-primary:        #0078D4;
+  --c-primary-dark:   #005A9E;
+  --c-primary-light:  #EFF6FC;
+
+  // Surface
+  --c-bg:             #F5F5F5;
+  --c-surface:        #FFFFFF;
+  --c-sidebar-bg:     #F5F5F5;
+  --c-sidebar-hover:  #EBEBEB;
+  --c-sidebar-active: #E0E7F3;
+
+  // Text
+  --c-text:           #201F1E;
+  --c-text-secondary: #605E5C;
+  --c-text-muted:     #A19F9D;
+
+  // Borders
+  --c-border:         #E1DFDD;
+  --c-border-light:   #F3F2F1;
+
+  // Bubbles
+  --c-bubble-user:    #0078D4;
+  --c-bubble-bot:     #FFFFFF;
+
+  // Feedback
+  --c-success:        #107C10;
+  --c-warning:        #797775;
+  --c-error:          #D83B01;
+
+  // Shadows
+  --shadow-sm:        0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md:        0 2px 8px rgba(0,0,0,0.12);
+
+  // Layout
+  --sidebar-width:    260px;
+  --header-height:    56px;
+  --input-area-height: 72px;
+
+  // Radius
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   18px;
+  --radius-full: 9999px;
 }
 
 // ─── Reset / Base ─────────────────────────────────────────────
-*, *::before, *::after {
-  box-sizing: border-box;
-}
+*, *::before, *::after { box-sizing: border-box; }
 
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'Roboto', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, sans-serif;
   font-size: 14px;
-  background: var(--bytehr-bg);
-  color: var(--bytehr-text);
+  background: var(--c-bg);
+  color: var(--c-text);
+  -webkit-font-smoothing: antialiased;
 }
 
+a { color: var(--c-primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
 // ─── Scrollbar ────────────────────────────────────────────────
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+::-webkit-scrollbar       { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: #C8C6C4;
-  border-radius: 3px;
-}
+::-webkit-scrollbar-thumb { background: #C8C6C4; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #A19F9D; }
 
 // ─── Material overrides ───────────────────────────────────────
 .mat-mdc-card {
-  border-radius: 8px !important;
-  box-shadow: var(--bytehr-shadow) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
-.mat-toolbar {
-  background: var(--bytehr-primary) !important;
-  color: #FFFFFF !important;
+// Suppress default mat-toolbar colour so components set their own
+.mat-toolbar { background: transparent !important; }
+
+// Icon button sizing consistency
+.mat-mdc-icon-button.sm {
+  width: 32px !important;
+  height: 32px !important;
+  padding: 4px !important;
+  .mat-icon { font-size: 18px; width: 18px; height: 18px; }
 }

@@ -1,10 +1,11 @@
 import {
-  Component, OnInit, OnDestroy, signal, computed,
+  Component, OnInit, OnDestroy, OnChanges, SimpleChanges,
+  Input, Output, EventEmitter,
+  signal, computed,
   ViewChild, ElementRef, AfterViewChecked, inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -20,43 +21,54 @@ import { uuidv4 } from '../../shared/uuid';
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    MatToolbarModule, MatIconModule, MatButtonModule, MatTooltipModule, MatSnackBarModule,
+    MatIconModule, MatButtonModule, MatTooltipModule, MatSnackBarModule,
     MessageListComponent, MessageInputComponent
   ],
   template: `
     <div class="chat-window">
-      <!-- Header -->
-      <mat-toolbar class="chat-header" color="primary">
-        <mat-icon class="header-icon">support_agent</mat-icon>
-        <div class="header-text">
-          <span class="header-title">ByteHR AI</span>
-          <span class="header-subtitle">HR Assistant · {{ statusLabel() }}</span>
-        </div>
-        <span class="spacer"></span>
-        <button mat-icon-button
-                matTooltip="Clear conversation"
-                (click)="clearConversation()"
-                aria-label="Clear conversation">
-          <mat-icon>delete_outline</mat-icon>
-        </button>
-        <button mat-icon-button
-                matTooltip="Sync HR documents"
-                (click)="syncDocuments()"
-                aria-label="Sync documents">
-          <mat-icon>sync</mat-icon>
-        </button>
-      </mat-toolbar>
 
-      <!-- Messages -->
+      <!-- ── Header ── -->
+      <header class="chat-header">
+        <div class="header-left">
+          <div class="header-avatar">
+            <mat-icon>support_agent</mat-icon>
+          </div>
+          <div class="header-info">
+            <span class="header-name">ByteHR AI</span>
+            <span class="header-status">
+              <span class="status-dot" [class.thinking]="isLoading()"></span>
+              {{ isLoading() ? 'Thinking…' : 'HR Assistant · Online' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button mat-icon-button class="sm"
+                  matTooltip="Sync HR documents"
+                  (click)="syncDocuments()"
+                  aria-label="Sync documents">
+            <mat-icon>sync</mat-icon>
+          </button>
+          <button mat-icon-button class="sm"
+                  matTooltip="Clear conversation"
+                  (click)="clearConversation()"
+                  aria-label="Clear conversation">
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </div>
+      </header>
+
+      <!-- ── Message area ── -->
       <div class="messages-scroll" #scrollContainer>
         <app-message-list [messages]="messages()" />
       </div>
 
-      <!-- Input -->
+      <!-- ── Input bar ── -->
       <app-message-input
         #inputComponent
         (messageSent)="onMessageSent($event)"
       />
+
     </div>
   `,
   styles: [`
@@ -64,51 +76,114 @@ import { uuidv4 } from '../../shared/uuid';
       display: flex;
       flex-direction: column;
       height: 100%;
-      background: #F5F5F5;
+      background: var(--c-bg);
+      overflow: hidden;
     }
+
+    /* ── Header ── */
     .chat-header {
-      flex-shrink: 0;
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      height: var(--header-height);
+      background: var(--c-surface);
+      border-bottom: 1px solid var(--c-border);
+      flex-shrink: 0;
       gap: 12px;
-      padding: 0 8px;
-      height: 56px;
-      min-height: 56px;
     }
-    .header-icon { font-size: 28px; width: 28px; height: 28px; }
-    .header-text {
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--c-primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      mat-icon { font-size: 20px; width: 20px; height: 20px; }
+    }
+    .header-info {
       display: flex;
       flex-direction: column;
+      gap: 1px;
     }
-    .header-title  { font-size: 16px; font-weight: 600; line-height: 1.2; }
-    .header-subtitle { font-size: 11px; opacity: 0.8; line-height: 1.2; }
-    .spacer { flex: 1; }
+    .header-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--c-text);
+      line-height: 1.2;
+    }
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--c-text-secondary);
+      line-height: 1.2;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #107C10;
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    .status-dot.thinking {
+      background: #FFB900;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ── Messages ── */
     .messages-scroll {
       flex: 1;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
+      scroll-behavior: smooth;
     }
   `]
 })
-export class ChatWindowComponent implements OnInit, OnDestroy, AfterViewChecked {
+export class ChatWindowComponent implements OnInit, OnChanges, OnDestroy, AfterViewChecked {
+
+  @Input() conversationId = uuidv4();
+
+  @Output() conversationStarted = new EventEmitter<{ id: string; title: string; preview: string }>();
+  @Output() conversationCleared = new EventEmitter<void>();
+
   @ViewChild('scrollContainer') scrollContainer!: ElementRef<HTMLElement>;
   @ViewChild('inputComponent') inputComponent!: MessageInputComponent;
 
   private readonly chatService = inject(ChatService);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly snackBar    = inject(MatSnackBar);
 
   private readonly _messages = signal<ChatMessage[]>([]);
-  readonly messages = this._messages.asReadonly();
+  readonly messages  = this._messages.asReadonly();
 
   private readonly _isLoading = signal(false);
-  readonly statusLabel = computed(() =>
-    this._isLoading() ? 'Thinking…' : 'Online'
-  );
+  readonly isLoading = this._isLoading.asReadonly();
 
-  conversationId = uuidv4();
   private shouldScrollToBottom = false;
   private suggestionListener!: EventListener;
+
+  // Per-conversation message store (keyed by conversationId)
+  private readonly messageStore = new Map<string, ChatMessage[]>();
 
   ngOnInit(): void {
     this.suggestionListener = (e: Event) => {
@@ -116,6 +191,21 @@ export class ChatWindowComponent implements OnInit, OnDestroy, AfterViewChecked 
       if (text) this.onMessageSent(text);
     };
     document.addEventListener('hr-suggestion', this.suggestionListener);
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['conversationId']) {
+      // Save current messages
+      const prev = changes['conversationId'].previousValue;
+      if (prev) {
+        this.messageStore.set(prev, this._messages());
+      }
+      // Restore or clear for new conversation
+      const next = changes['conversationId'].currentValue as string;
+      this._messages.set(this.messageStore.get(next) ?? []);
+      this._isLoading.set(false);
+      this.shouldScrollToBottom = true;
+    }
   }
 
   ngOnDestroy(): void {
@@ -133,24 +223,22 @@ export class ChatWindowComponent implements OnInit, OnDestroy, AfterViewChecked 
     if (!text.trim() || this._isLoading()) return;
 
     const userMsg: ChatMessage = {
-      id: uuidv4(),
-      role: 'user',
-      content: text,
-      timestamp: new Date()
+      id: uuidv4(), role: 'user',
+      content: text, timestamp: new Date()
     };
-
     const loadingMsg: ChatMessage = {
-      id: uuidv4(),
-      role: 'assistant',
-      content: '',
-      timestamp: new Date(),
-      loading: true
+      id: uuidv4(), role: 'assistant',
+      content: '', timestamp: new Date(), loading: true
     };
 
     this._messages.update(msgs => [...msgs, userMsg, loadingMsg]);
     this._isLoading.set(true);
-    this.inputComponent.setDisabled(true);
+    this.inputComponent?.setDisabled(true);
     this.shouldScrollToBottom = true;
+
+    // Notify parent so sidebar can show conversation title
+    const title = text.length > 40 ? text.slice(0, 40) + '…' : text;
+    this.conversationStarted.emit({ id: this.conversationId, title, preview: text });
 
     this.chatService.sendMessage({
       message: text,
@@ -159,18 +247,13 @@ export class ChatWindowComponent implements OnInit, OnDestroy, AfterViewChecked 
       next: (response) => {
         this._messages.update(msgs =>
           msgs.map(m => m.id === loadingMsg.id
-            ? {
-                ...m,
-                content: response.answer,
-                citations: response.citations,
-                confidenceScore: response.confidenceScore,
-                loading: false
-              }
+            ? { ...m, content: response.answer, citations: response.citations,
+                confidenceScore: response.confidenceScore, loading: false }
             : m
           )
         );
         this._isLoading.set(false);
-        this.inputComponent.setDisabled(false);
+        this.inputComponent?.setDisabled(false);
         this.shouldScrollToBottom = true;
       },
       error: (err: Error) => {
@@ -181,7 +264,7 @@ export class ChatWindowComponent implements OnInit, OnDestroy, AfterViewChecked 
           )
         );
         this._isLoading.set(false);
-        this.inputComponent.setDisabled(false);
+        this.inputComponent?.setDisabled(false);
         this.shouldScrollToBottom = true;
         this.snackBar.open('Connection error. Please check API availability.', 'Dismiss', { duration: 4000 });
       }
@@ -190,12 +273,12 @@ export class ChatWindowComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   clearConversation(): void {
     this._messages.set([]);
-    this.conversationId = uuidv4();
+    this.conversationCleared.emit();
   }
 
   syncDocuments(): void {
     this.chatService.triggerSync().subscribe({
-      next: () => this.snackBar.open('Document sync started successfully.', 'OK', { duration: 3000 }),
+      next: () => this.snackBar.open('Document sync started.', 'OK', { duration: 3000 }),
       error: () => this.snackBar.open('Sync failed. Check SharePoint configuration.', 'Dismiss', { duration: 4000 })
     });
   }

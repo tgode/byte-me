@@ -13,7 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
   standalone: true,
   imports: [CommonModule, FormsModule, MatInputModule, MatButtonModule, MatIconModule, MatTooltipModule],
   template: `
-    <div class="input-container">
+    <div class="input-bar">
       <div class="input-wrapper">
         <textarea
           #textArea
@@ -22,82 +22,101 @@ import { MatTooltipModule } from '@angular/material/tooltip';
           (ngModelChange)="onInput()"
           (keydown.enter)="onEnter($event)"
           [disabled]="disabled()"
-          placeholder="Ask an HR question… (Enter to send, Shift+Enter for new line)"
+          placeholder="Ask an HR question…"
           rows="1"
           maxlength="2000"
           aria-label="Message input"
         ></textarea>
-        <div class="char-count" [class.warn]="charCount() > 1800">
-          {{ charCount() }}/2000
-        </div>
+        <span class="char-hint" [class.warn]="charCount() > 1800">
+          {{ charCount() > 1600 ? charCount() + '/2000' : '' }}
+        </span>
       </div>
       <button
-        mat-icon-button
-        class="send-button"
+        class="send-btn"
+        [class.active]="canSend()"
         [disabled]="!canSend()"
         (click)="sendMessage()"
-        matTooltip="Send message"
-        aria-label="Send message">
+        [attr.aria-label]="'Send message'"
+        matTooltip="Send (Enter)">
         <mat-icon>send</mat-icon>
       </button>
     </div>
   `,
   styles: [`
-    .input-container {
+    .input-bar {
       display: flex;
       align-items: flex-end;
-      gap: 8px;
-      padding: 12px 16px;
-      border-top: 1px solid #E1DFDD;
-      background: #fff;
+      gap: 10px;
+      padding: 12px 16px 14px;
+      background: var(--c-surface);
+      border-top: 1px solid var(--c-border);
+      flex-shrink: 0;
     }
     .input-wrapper {
       flex: 1;
       position: relative;
+      background: var(--c-bg);
+      border: 1.5px solid var(--c-border);
+      border-radius: 22px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-wrapper:focus-within {
+      border-color: var(--c-primary);
+      background: var(--c-surface);
+      box-shadow: 0 0 0 2px rgba(0,120,212,0.12);
     }
     .message-textarea {
+      display: block;
       width: 100%;
-      border: 1.5px solid #E1DFDD;
+      border: none;
+      background: transparent;
       border-radius: 22px;
-      padding: 10px 50px 10px 16px;
+      padding: 10px 44px 10px 18px;
       font-family: inherit;
       font-size: 14px;
       line-height: 1.5;
       resize: none;
       outline: none;
-      transition: border-color 0.2s;
-      background: #F5F5F5;
+      color: var(--c-text);
       max-height: 120px;
       overflow-y: auto;
-      color: #201F1E;
     }
-    .message-textarea:focus {
-      border-color: #0078D4;
-      background: #fff;
-    }
-    .message-textarea:disabled {
-      background: #F3F2F1;
-      cursor: not-allowed;
-    }
-    .char-count {
+    .message-textarea::placeholder { color: var(--c-text-muted); }
+    .message-textarea:disabled { cursor: not-allowed; opacity: 0.6; }
+    .char-hint {
       position: absolute;
-      right: 12px;
+      right: 14px;
       bottom: 8px;
-      font-size: 11px;
-      color: #A19F9D;
+      font-size: 10px;
+      color: var(--c-text-muted);
+      pointer-events: none;
     }
-    .char-count.warn { color: #D83B01; }
-    .send-button {
-      background: #0078D4 !important;
-      color: #fff !important;
-      width: 44px;
-      height: 44px;
+    .char-hint.warn { color: var(--c-error); }
+
+    /* Send button */
+    .send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: var(--c-border);
+      color: var(--c-text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: default;
       flex-shrink: 0;
+      transition: background 0.2s, color 0.2s, transform 0.1s;
+      mat-icon { font-size: 20px; width: 20px; height: 20px; }
     }
-    .send-button:disabled {
-      background: #E1DFDD !important;
-      color: #A19F9D !important;
+    .send-btn.active {
+      background: var(--c-primary);
+      color: #fff;
+      cursor: pointer;
     }
+    .send-btn.active:hover  { background: var(--c-primary-dark); transform: scale(1.05); }
+    .send-btn.active:active { transform: scale(0.95); }
+    .send-btn:disabled { opacity: 1; } /* override browser default — we handle style manually */
   `]
 })
 export class MessageInputComponent {
