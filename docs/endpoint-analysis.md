@@ -116,7 +116,7 @@ TeamsController.handleActivity()
         │
         ├─ Build system prompt (inject document chunks as context)
         ├─ Build message list (system + history + question)
-        ├─ ChatService.generateAnswer(messages)  → Ollama /api/chat (qwen3:8b)
+        ├─ ChatService.generateAnswer(messages)  → Ollama /api/chat (qwen3:1.7b)
         ├─ ConversationService.saveConversation(...)
         └─ AnalyticsRepository.save(...)
         │
@@ -375,7 +375,7 @@ POST /api/messages
               │                ORDER BY embedding <=> ?::vector  LIMIT 5
               ├── ChatService (ChatServiceImpl)
               │     └── OllamaClient  →  POST http://ollama:11434/api/chat
-              │                          model: qwen3:8b
+              │                          model: qwen3:1.7b
               ├── ConversationService (ConversationServiceImpl)
               │     └── ConversationRepository (JPA)
               └── AnalyticsRepository (JPA)

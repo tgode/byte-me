@@ -46,7 +46,7 @@ public class ChatController {
             2. Generate question embedding (Ollama nomic-embed-text)
             3. Cosine similarity search in pgvector, filtered by country
             4. Build context from top-K document chunks
-            5. Generate answer with citations (Ollama qwen3:8b)
+            5. Generate answer with citations (Ollama qwen3:1.7b)
 
             **Low confidence:** When no sufficiently relevant document chunks are found,
             returns `answered: false` and a message to contact HR directly.

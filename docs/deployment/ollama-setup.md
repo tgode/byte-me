@@ -8,7 +8,7 @@ Ollama provides local AI inference without any cloud dependencies.
 
 When you run `docker compose up`, the `ollama-init` service automatically pulls:
 - `nomic-embed-text` — 768-dimensional text embeddings
-- `qwen3:8b` — HR answer generation (multilingual)
+- `qwen3:1.7b` — HR answer generation (multilingual)
 
 No manual action required.
 
@@ -29,7 +29,7 @@ curl -fsSL https://ollama.com/install.sh | sh
 
 ```bash
 ollama pull nomic-embed-text
-ollama pull qwen3:8b
+ollama pull qwen3:1.7b
 ```
 
 ### 3. Verify
@@ -44,7 +44,7 @@ curl http://localhost:11434/api/embeddings \
 
 # Test chat
 curl http://localhost:11434/api/chat \
-  -d '{"model":"qwen3:8b","messages":[{"role":"user","content":"What is vacation policy?"}],"stream":false}'
+  -d '{"model":"qwen3:1.7b","messages":[{"role":"user","content":"What is vacation policy?"}],"stream":false}'
 ```
 
 ---
@@ -54,7 +54,7 @@ curl http://localhost:11434/api/chat \
 | Model | Disk | RAM (approx) |
 |---|---|---|
 | nomic-embed-text | ~270 MB | ~1 GB |
-| qwen3:8b | ~5.2 GB | ~6 GB |
+| qwen3:1.7b | ~5.2 GB | ~6 GB |
 
 Minimum recommended: **8 GB RAM**, **10 GB disk**.
 

@@ -20,7 +20,7 @@ HrResponseAgent
   ├── LanguageDetectionService  (Tika Optimaize)
   ├── VectorSearchService       (pgvector cosine similarity)
   │     └── EmbeddingService    (Ollama nomic-embed-text)
-  ├── ChatService               (Ollama qwen3:8b)
+  ├── ChatService               (Ollama qwen3:1.7b)
   ├── ConversationService       (multi-turn history)
   └── AnalyticsRepository
 ```

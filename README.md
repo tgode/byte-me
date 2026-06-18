@@ -21,7 +21,7 @@ ByteHR Teams Bot  ──►  Spring Boot API  ──►  Ollama (LLM)
 |---|---|
 | Backend | Java 21, Spring Boot 3 |
 | Database | PostgreSQL 16 + pgvector |
-| AI / LLM | Ollama — `qwen3:8b` |
+| AI / LLM | Ollama — `qwen3:1.7b` |
 | Embeddings | Ollama — `nomic-embed-text` |
 | Documents | SharePoint via Microsoft Graph |
 | Interface | Microsoft Teams (Personal App) |
@@ -66,7 +66,7 @@ No Azure credentials are required for the demo.
 ```bash
 cp .env.example .env               # defaults are already set for local mode
 docker compose up -d               # starts API, PostgreSQL, Ollama
-docker compose logs -f ollama-init # wait for qwen3:8b + nomic-embed-text (~10 min)
+docker compose logs -f ollama-init # wait for qwen3:1.7b + nomic-embed-text (~10 min)
 curl -X POST http://localhost:8080/api/sync  # index all 11 HR documents
 ```
 

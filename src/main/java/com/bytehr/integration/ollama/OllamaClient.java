@@ -106,10 +106,18 @@ public class OllamaClient {
 
     /**
      * Generates an HR answer using POST /api/chat with thinking mode disabled for lower latency.
-     * qwen3:8b with think:false responds in ~30s vs ~55s with thinking enabled.
+     * qwen3:1.7b with think:false; think=false disables chain-of-thought for lower latency.
      */
     public String generateAnswer(List<OllamaMessage> messages) {
         long start = System.currentTimeMillis();
+
+        // Structured performance logging — emitted before and after every generation call
+        int promptChars = messages.stream().mapToInt(m -> m.getContent().length()).sum();
+        int estimatedTokens = promptChars / 4; // ~4 chars/token across EN/SQ/SR
+
+        log.info("[Chat] model={}", chatModel);
+        log.info("[Chat] promptChars={}", promptChars);
+        log.info("[Chat] estimatedTokens={}", estimatedTokens);
         log.debug("[OllamaClient] Chat request: url={}{}, model='{}', messages={}, timeout={}s",
                 baseUrl, CHAT_PATH, chatModel, messages.size(), chatTimeoutSeconds);
 
@@ -149,6 +157,7 @@ public class OllamaClient {
             }
 
             String content = response.getMessage().getContent();
+            log.info("[Chat] generationDurationMs={}", elapsed);
             log.debug("[OllamaClient] Chat response: model='{}', responseLen={}, elapsed={}ms",
                     chatModel, content.length(), elapsed);
 

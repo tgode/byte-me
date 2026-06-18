@@ -39,7 +39,7 @@ DocumentProcessorService
 VectorSearchService
         │
         ▼
-HrResponseAgent (Ollama qwen3:8b)
+HrResponseAgent (Ollama qwen3:1.7b)
         │
         ▼
 Teams Bot Response
@@ -193,7 +193,7 @@ docker compose up -d
 ```bash
 # Watch the model download progress
 docker compose logs -f ollama-init
-# Expected: "nomic-embed-text" and "qwen3:8b" pulled successfully
+# Expected: "nomic-embed-text" and "qwen3:1.7b" pulled successfully
 ```
 
 ### 4. Trigger document indexing

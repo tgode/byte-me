@@ -5,7 +5,7 @@
 # against a local Ollama instance.
 
 OLLAMA_HOST="${OLLAMA_HOST:-http://localhost:11434}"
-MODELS="nomic-embed-text qwen3:4b"
+MODELS="nomic-embed-text qwen3:1.7b"
 
 wait_for_ollama() {
   echo "Waiting for Ollama at $OLLAMA_HOST ..."

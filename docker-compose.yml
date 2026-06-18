@@ -57,8 +57,8 @@ services:
         OLLAMA_HOST=http://ollama:11434
         echo "Pulling nomic-embed-text..."
         ollama pull nomic-embed-text
-        echo "Pulling qwen3:4b..."
-        ollama pull qwen3:4b
+        echo "Pulling qwen3:1.7b..."
+        ollama pull qwen3:1.7b
         echo "Models ready."
     environment:
       - OLLAMA_HOST=http://ollama:11434
@@ -88,7 +88,7 @@ services:
       # Ollama
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text}
-      OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen3:4b}
+      OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen3:1.7b}
       OLLAMA_EMBEDDING_TIMEOUT: ${OLLAMA_EMBEDDING_TIMEOUT:-120}
       OLLAMA_CHAT_TIMEOUT: ${OLLAMA_CHAT_TIMEOUT:-300}
       BYTEHR_RAG_TOP_K: ${BYTEHR_RAG_TOP_K:-3}
