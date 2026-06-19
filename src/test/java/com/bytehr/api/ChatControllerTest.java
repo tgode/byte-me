@@ -114,7 +114,7 @@ class ChatControllerTest {
 
         ChatRequest request = ChatRequest.builder()
                 .message("And what about Serbia?")
-                .sessionId(sessionId)
+                .conversationId(sessionId)
                 .build();
 
         mockMvc.perform(post("/api/chat")
