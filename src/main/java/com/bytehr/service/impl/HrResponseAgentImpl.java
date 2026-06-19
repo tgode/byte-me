@@ -24,6 +24,9 @@ public class HrResponseAgentImpl implements HrResponseAgent {
     private static final String LOW_CONFIDENCE_RESPONSE =
             "I could not find a reliable answer. Please contact HR.";
 
+    /** The exact phrase the LLM emits when the context doesn't contain the answer. */
+    private static final String LLM_FALLBACK_PHRASE = "I could not find this information in the HR documents.";
+
     /**
      * Standard system prompt — used when strict-mode=false.
      * %1$s = document context, %2$s = language specification
@@ -74,6 +77,14 @@ public class HrResponseAgentImpl implements HrResponseAgent {
             Respond ONLY in %2$s. Do not switch languages mid-answer.
             """;
 
+    /** Keywords that signal an EPR/goal-setting query — same set used by VectorSearchServiceImpl. */
+    private static final Set<String> EPR_QUERY_KEYWORDS = Set.of(
+            "goal", "goals", "objective", "objectives", "performance", "epr",
+            "mid-year", "midyear", "review", "appraisal", "evaluation",
+            "cilj", "ciljeve", "ciljevi", "performanse", "pregled", "procena", "ocena",
+            "qëllim", "qëllime", "performancë", "vlerësim", "objektiv"
+    );
+
     private final VectorSearchService vectorSearchService;
     private final ChatService chatService;
     private final LanguageDetectionService languageDetectionService;
@@ -91,50 +102,72 @@ public class HrResponseAgentImpl implements HrResponseAgent {
         String detectedLanguage = languageDetectionService.detectLanguage(question);
         String languageSpec = buildLanguageSpec(detectedLanguage);
 
-        log.info("[RAG] Query: user='{}', country='{}', detectedLanguage='{}', lang='{}', topK={}, maxContextChars={}, strictMode={}",
+        // For EPR/goal queries, expand the context window to capture longer PPTX FAQ slides
+        boolean isEprQuery = isEprRelatedQuery(question);
+        int effectiveMaxContextChars = isEprQuery
+                ? Math.max(ragProperties.getMaxContextChars(), 3000)
+                : ragProperties.getMaxContextChars();
+
+        log.info("[RAG] Query: user='{}', country='{}', detectedLanguage='{}', lang='{}', topK={}, " +
+                 "maxContextChars={}, strictMode={}, eprQuery={}",
                 userId, country, detectedLanguage, languageSpec,
-                ragProperties.getTopK(), ragProperties.getMaxContextChars(), ragProperties.isStrictMode());
+                ragProperties.getTopK(), effectiveMaxContextChars,
+                ragProperties.isStrictMode(), isEprQuery);
 
         // Retrieve relevant chunks using configurable topK
         List<RelevantChunk> chunks = vectorSearchService.search(question, country, ragProperties.getTopK());
 
-        // Validation logging — retrieved documents
+        // ── [RAG Validation] block ────────────────────────────────────────────
         if (chunks.isEmpty()) {
-            log.info("[RAG] No chunks retrieved — returning low-confidence response");
-        } else {
-            log.info("[RAG] Retrieved {} chunk(s):", chunks.size());
-            for (RelevantChunk chunk : chunks) {
-                log.info("[RAG]   document='{}' similarityScore={} chunkIdx={}",
-                        chunk.getDocumentName(),
-                        String.format("%.4f", chunk.getSimilarityScore()),
-                        chunk.getChunkIndex());
-            }
-        }
-
-        if (chunks.isEmpty()) {
+            log.info("[RAG Validation] retrievedChunks=0 contextChars=0 " +
+                     "fallbackTriggered=true fallbackReason=NO_CHUNKS_RETRIEVED");
             return buildLowConfidenceResponse(detectedLanguage, startTime, userId, null, false);
         }
 
         double maxScore = chunks.stream().mapToDouble(RelevantChunk::getSimilarityScore).max().orElse(0.0);
 
+        // Log each retrieved chunk for diagnostics
+        log.info("[RAG Validation] retrievedChunks={}:", chunks.size());
+        for (int i = 0; i < chunks.size(); i++) {
+            RelevantChunk chunk = chunks.get(i);
+            log.info("[RAG Validation]   #{}  document='{}' score={} chunkIdx={} " +
+                     "contentLen={}  contentPreview={}",
+                    i + 1,
+                    chunk.getDocumentName(),
+                    String.format("%.4f", chunk.getSimilarityScore()),
+                    chunk.getChunkIndex(),
+                    chunk.getContent().length(),
+                    repr(chunk.getContent(), 120));
+        }
+
         if (maxScore < confidenceThreshold) {
-            log.info("[RAG] Confidence too low: maxScore={} < threshold={}", maxScore, confidenceThreshold);
+            log.info("[RAG Validation] fallbackTriggered=true fallbackReason=LOW_CONFIDENCE " +
+                     "maxScore={} threshold={}", maxScore, confidenceThreshold);
             return buildLowConfidenceResponse(detectedLanguage, startTime, userId, null, false);
         }
 
-        // Build context with character limit
-        String context = buildContext(chunks, ragProperties.getMaxContextChars());
-        log.info("[RAG] Context size: {} chars", context.length());
+        // Build context with effective character limit
+        String context = buildContext(chunks, effectiveMaxContextChars);
+        int totalPromptChars = systemPromptTemplate(ragProperties.isStrictMode())
+                .formatted(context, languageSpec).length();
+        int estimatedTokens = totalPromptChars / 4;
+
+        log.info("[RAG Validation] contextChars={} estimatedTokens=~{} fallbackTriggered=false " +
+                 "maxScore={}", context.length(), estimatedTokens, maxScore);
+
+        // Log first 1000 chars of generated context for debugging
+        log.info("[RAG Validation] contextPreview={}",
+                repr(context, 1000));
 
         // Select prompt template and inject context + explicit language
-        String promptTemplate = ragProperties.isStrictMode() ? SYSTEM_PROMPT_STRICT : SYSTEM_PROMPT_STANDARD;
-        String systemPrompt = String.format(promptTemplate, context, languageSpec);
+        String systemPrompt = String.format(
+                ragProperties.isStrictMode() ? SYSTEM_PROMPT_STRICT : SYSTEM_PROMPT_STANDARD,
+                context, languageSpec);
 
         // Build message list: system + history + current question
         List<OllamaMessage> messages = new ArrayList<>();
         messages.add(OllamaMessage.builder().role("system").content(systemPrompt).build());
 
-        // Add conversation history (up to last 6 exchanges = 12 strings)
         List<String> recentHistory = conversationHistory.size() > 12
                 ? conversationHistory.subList(conversationHistory.size() - 12, conversationHistory.size())
                 : conversationHistory;
@@ -146,16 +179,24 @@ public class HrResponseAgentImpl implements HrResponseAgent {
         messages.add(OllamaMessage.builder().role("user").content(question).build());
 
         // Prompt stats before LLM call
-        int totalPromptChars = messages.stream().mapToInt(m -> m.getContent().length()).sum();
-        int estimatedTokens = totalPromptChars / 4;
         log.debug("[RAG] Prompt stats: messages={}, totalChars={}, estimatedTokens=~{}, historyTurns={}",
                 messages.size(), totalPromptChars, estimatedTokens, recentHistory.size() / 2);
 
         String rawAnswer = chatService.generateAnswer(messages);
         List<Citation> citations = buildCitations(chunks);
 
-        // Validation logging — final answer
-        log.info("[RAG] Answer length: {} chars", rawAnswer.length());
+        // Detect LLM-generated fallback (vs code-level fallback)
+        boolean llmFallback = rawAnswer.contains(LLM_FALLBACK_PHRASE)
+                || rawAnswer.toLowerCase().contains("could not find this information");
+
+        log.info("[RAG Validation] answerLen={} llmFallbackDetected={}", rawAnswer.length(), llmFallback);
+
+        if (llmFallback) {
+            log.warn("[RAG Validation] LLM returned fallback despite {} retrieved chunks " +
+                     "(contextChars={}, maxScore={}). " +
+                     "Context may be too sparse or irrelevant for the question.",
+                    chunks.size(), context.length(), maxScore);
+        }
 
         long responseTimeMs = System.currentTimeMillis() - startTime;
         log.info("[RAG] Answered in {}ms: confidence={}, chunks={}, citations={}, lang='{}', strictMode={}",
@@ -166,34 +207,24 @@ public class HrResponseAgentImpl implements HrResponseAgent {
         conversationService.saveConversation(conversationId, userId, userName, country, question, rawAnswer, maxScore);
 
         // Record analytics
-        recordAnalytics(null, responseTimeMs, maxScore, detectedLanguage, country, true);
+        recordAnalytics(null, responseTimeMs, maxScore, detectedLanguage, country, !llmFallback);
 
         return HrChatResponse.builder()
                 .answer(rawAnswer)
                 .citations(citations)
                 .confidenceScore(maxScore)
                 .detectedLanguage(detectedLanguage)
-                .answered(true)
+                .answered(!llmFallback)
                 .build();
     }
 
-    /**
-     * Maps a BCP-47 language code to a human-readable specification injected into the system prompt.
-     * This ensures the LLM responds in the correct language even when the question is short
-     * (which can confuse language detection).
-     */
-    private String buildLanguageSpec(String langCode) {
-        return switch (langCode.toLowerCase()) {
-            case "sq" -> "Albanian (Shqip)";
-            case "sr" -> "Serbian (Srpski)";
-            case "en" -> "English";
-            default   -> "the same language as the user's question (detected: " + langCode + ")";
-        };
-    }
+    // ─────────────────────────────────────────────────────────────────────────
+    // Context building
+    // ─────────────────────────────────────────────────────────────────────────
 
     /**
      * Builds a context string from retrieved chunks, capped at maxContextChars total.
-     * Chunks are included in relevance order. Overflowing chunks are truncated.
+     * Overflowing chunks are truncated. EPR queries use an expanded limit.
      */
     private String buildContext(List<RelevantChunk> chunks, int maxContextChars) {
         StringBuilder sb = new StringBuilder();
@@ -219,9 +250,7 @@ public class HrResponseAgentImpl implements HrResponseAgent {
             remaining -= content.length() + 2;
         }
 
-        String context = sb.toString();
-        log.debug("[RAG] Context: {}/{} chars used", context.length(), maxContextChars);
-        return context;
+        return sb.toString();
     }
 
     private String buildChunkHeader(RelevantChunk chunk, int number) {
@@ -232,6 +261,35 @@ public class HrResponseAgentImpl implements HrResponseAgent {
         }
         header.append(" ---\n");
         return header.toString();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private boolean isEprRelatedQuery(String question) {
+        String lower = question.toLowerCase();
+        return EPR_QUERY_KEYWORDS.stream().anyMatch(lower::contains);
+    }
+
+    private String systemPromptTemplate(boolean strict) {
+        return strict ? SYSTEM_PROMPT_STRICT : SYSTEM_PROMPT_STANDARD;
+    }
+
+    private String buildLanguageSpec(String langCode) {
+        return switch (langCode.toLowerCase()) {
+            case "sq" -> "Albanian (Shqip)";
+            case "sr" -> "Serbian (Srpski)";
+            case "en" -> "English";
+            default   -> "the same language as the user's question (detected: " + langCode + ")";
+        };
+    }
+
+    /** Returns a repr-style preview: up to maxLen chars, escaped for log readability. */
+    private String repr(String text, int maxLen) {
+        if (text == null) return "null";
+        String truncated = text.length() > maxLen ? text.substring(0, maxLen) + "…" : text;
+        return truncated.replace("\n", "\\n").replace("\r", "");
     }
 
     private List<Citation> buildCitations(List<RelevantChunk> chunks) {
