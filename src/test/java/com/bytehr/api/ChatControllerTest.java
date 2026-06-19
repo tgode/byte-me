@@ -59,7 +59,7 @@ class ChatControllerTest {
                 .thenReturn(agentResponse);
 
         ChatRequest request = ChatRequest.builder()
-                .question("How many vacation days do I have?")
+                .message("How many vacation days do I have?")
                 .country("AL")
                 .build();
 
@@ -88,7 +88,7 @@ class ChatControllerTest {
                         .build());
 
         ChatRequest request = ChatRequest.builder()
-                .question("What is the remote work policy?")
+                .message("What is the remote work policy?")
                 .build(); // no country
 
         mockMvc.perform(post("/api/chat")
@@ -113,7 +113,7 @@ class ChatControllerTest {
                         .build());
 
         ChatRequest request = ChatRequest.builder()
-                .question("And what about Serbia?")
+                .message("And what about Serbia?")
                 .sessionId(sessionId)
                 .build();
 
@@ -138,7 +138,7 @@ class ChatControllerTest {
                         .build());
 
         ChatRequest request = ChatRequest.builder()
-                .question("What is the weather today?")
+                .message("What is the weather today?")
                 .build();
 
         mockMvc.perform(post("/api/chat")
@@ -167,7 +167,7 @@ class ChatControllerTest {
                         .build());
 
         ChatRequest request = ChatRequest.builder()
-                .question("What benefits does the company offer?")
+                .message("What benefits does the company offer?")
                 .country("RS")
                 .build();
 
@@ -187,7 +187,7 @@ class ChatControllerTest {
     @Test
     void chat_blankQuestion_returns400() throws Exception {
         ChatRequest request = ChatRequest.builder()
-                .question("")
+                .message("")
                 .build();
 
         mockMvc.perform(post("/api/chat")
@@ -207,7 +207,7 @@ class ChatControllerTest {
     @Test
     void chat_invalidCountryCode_returns400() throws Exception {
         ChatRequest request = ChatRequest.builder()
-                .question("How many vacation days?")
+                .message("How many vacation days?")
                 .country("INVALID")
                 .build();
 
@@ -220,7 +220,7 @@ class ChatControllerTest {
     @Test
     void chat_questionTooLong_returns400() throws Exception {
         ChatRequest request = ChatRequest.builder()
-                .question("A".repeat(2001))
+                .message("A".repeat(2001))
                 .build();
 
         mockMvc.perform(post("/api/chat")
