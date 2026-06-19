@@ -1,0 +1,39 @@
+# Local development override — uses Windows native Ollama instead of Docker Ollama.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
+#
+# This override:
+#   1. Replaces the Docker Ollama service with a lightweight healthcheck container
+#      that verifies the Windows host Ollama (host.docker.internal:11434) is reachable.
+#   2. Points bytehr-api to Windows Ollama via host.docker.internal.
+#   3. Uses qwen3:1.7b (already pulled on Windows Ollama) instead of qwen3:14b.
+#   4. Disables the ollama-init model-pull service (not needed for host Ollama).
+
+services:
+  # Replace Docker Ollama with a probe that checks Windows host Ollama
+  ollama:
+    image: curlimages/curl:latest
+    container_name: bytehr-ollama-proxy
+    restart: unless-stopped
+    entrypoint: ["sh", "-c", "while true; do sleep 30; done"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://host.docker.internal:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    ports: []
+    volumes: []
+
+  # Disable the model-pull init container
+  ollama-init:
+    entrypoint: ["sh", "-c", "echo 'Skipping model pull — using host Ollama'; exit 0"]
+    restart: "no"
+
+  # Point bytehr-api to Windows Ollama and use the fast 1.7b model
+  bytehr-api:
+    environment:
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      OLLAMA_CHAT_MODEL: qwen3:1.7b
+      OLLAMA_EMBEDDING_MODEL: nomic-embed-text:latest
