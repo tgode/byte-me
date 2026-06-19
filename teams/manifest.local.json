@@ -2,7 +2,7 @@
   "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
   "manifestVersion": "1.17",
   "version": "1.0.0",
-  "id": "fd5a8cce-3ab6-4147-b3ff-8c7b123247a1",
+  "id": "fd5a8cce-3ab6-4147-b3ff-8c7b123247a",
   "packageName": "com.bytehr.teams",
   "developer": {
     "name": "ByteHR Team",
@@ -19,7 +19,7 @@
     "full": "ByteHR AI is an enterprise-grade HR assistant that delivers instant, accurate answers to employee questions on company policies, benefits, leave entitlements, payroll, and onboarding - powered by advanced AI and your organisation's official HR documentation across Albania, Serbia, and global operations."
   },
   "icons": {
-    "color": "color.png",
+    "color": "color.jpg",
     "outline": "outline.png"
   },
   "accentColor": "#0078D4",
