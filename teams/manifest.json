@@ -3,7 +3,6 @@
   "manifestVersion": "1.17",
   "version": "1.0.0",
   "id": "${{TEAMS_APP_ID}}",
-  "packageName": "com.bytehr.teams",
   "developer": {
     "name": "ByteHR Team",
     "websiteUrl": "https://bytehr.example.com",
@@ -33,26 +32,11 @@
         {
           "scopes": ["personal"],
           "commands": [
-            {
-              "title": "Help",
-              "description": "Show available commands and how to use ByteHR Assistant"
-            },
-            {
-              "title": "Vacation",
-              "description": "Ask about vacation and annual leave policy"
-            },
-            {
-              "title": "Benefits",
-              "description": "Ask about employee benefits and perks"
-            },
-            {
-              "title": "SickLeave",
-              "description": "Ask about sick leave and medical policy"
-            },
-            {
-              "title": "Onboarding",
-              "description": "Ask about onboarding and new employee procedures"
-            }
+            { "title": "Help", "description": "Show available commands and how to use ByteHR Assistant" },
+            { "title": "Vacation", "description": "Ask about vacation and annual leave policy" },
+            { "title": "Benefits", "description": "Ask about employee benefits and perks" },
+            { "title": "SickLeave", "description": "Ask about sick leave and medical policy" },
+            { "title": "Onboarding", "description": "Ask about onboarding and new employee procedures" }
           ]
         }
       ]
@@ -68,9 +52,7 @@
     }
   ],
   "permissions": ["identity", "messageTeamMembers"],
-  "validDomains": [
-    "${{NGROK_DOMAIN}}"
-  ],
+  "validDomains": ["${{NGROK_DOMAIN}}"],
   "webApplicationInfo": {
     "id": "${{TEAMS_APP_ID}}",
     "resource": "api://${{NGROK_DOMAIN}}/${{TEAMS_APP_ID}}"

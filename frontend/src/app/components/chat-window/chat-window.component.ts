@@ -28,8 +28,10 @@ import { uuidv4 } from '../../shared/uuid';
     <div class="chat-window">
 
       <!-- ── Header ── -->
-      <header class="chat-header">
-        <div class="header-left">
+      <header class="chat-header">        <div class="header-left">
+          <button class="hamburger-btn" (click)="menuToggle.emit()" aria-label="Open menu">
+            <mat-icon>menu</mat-icon>
+          </button>
           <div class="header-avatar" [class.thinking]="isLoading()">
             <mat-icon>support_agent</mat-icon>
           </div>
@@ -174,6 +176,21 @@ import { uuidv4 } from '../../shared/uuid';
       flex-direction: column;
       scroll-behavior: smooth;
     }
+    .hamburger-btn {
+      display: none;
+      align-items: center; justify-content: center;
+      width: 36px; height: 36px; padding: 0;
+      border: none; background: transparent;
+      color: var(--c-text-secondary); cursor: pointer;
+      border-radius: var(--radius-md);
+      transition: background var(--t-fast), color var(--t-fast);
+      flex-shrink: 0;
+      mat-icon { font-size: 22px; width: 22px; height: 22px; }
+    }
+    .hamburger-btn:hover { background: var(--c-sidebar-hover); color: var(--c-text); }
+    @media (max-width: 768px) {
+      .hamburger-btn { display: flex; }
+    }
   `]
 })
 export class ChatWindowComponent implements OnInit, OnChanges, OnDestroy, AfterViewChecked {
@@ -182,6 +199,7 @@ export class ChatWindowComponent implements OnInit, OnChanges, OnDestroy, AfterV
 
   @Output() conversationStarted = new EventEmitter<{ id: string; title: string; preview: string }>();
   @Output() conversationCleared = new EventEmitter<void>();
+  @Output() menuToggle = new EventEmitter<void>();
 
   @ViewChild('scrollContainer') scrollContainer!: ElementRef<HTMLElement>;
   @ViewChild('inputComponent') inputComponent!: MessageInputComponent;
@@ -287,3 +305,5 @@ export class ChatWindowComponent implements OnInit, OnChanges, OnDestroy, AfterV
     } catch { /* ignore */ }
   }
 }
+
+
